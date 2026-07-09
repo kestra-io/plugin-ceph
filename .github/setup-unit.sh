@@ -58,19 +58,42 @@ done
 
 echo "Ceph Dashboard API is ready on https://localhost:8443"
 
-# Diagnostic (non-fatal): exercise RGW bucket delete via the dashboard and, if it fails, dump the
-# mgr dashboard traceback so the RGW 500 seen in the integration test can be root-caused.
-echo "RGW bucket delete smoke test..."
-V="application/vnd.ceph.api.v1.0+json"
-SMOKE_TOKEN="$(curl -sk -X POST https://localhost:8443/api/auth -H "Accept: ${V}" -H "Content-Type: application/json" -d '{"username":"admin","password":"password"}' | sed -n 's/.*"token": *"\([^"]*\)".*/\1/p')"
-curl -sk -X POST https://localhost:8443/api/rgw/user -H "Accept: ${V}" -H "Authorization: Bearer ${SMOKE_TOKEN}" -H "Content-Type: application/json" -d '{"uid":"smoke","display_name":"smoke"}' >/dev/null 2>&1 || true
-curl -sk -X POST https://localhost:8443/api/rgw/bucket -H "Accept: ${V}" -H "Authorization: Bearer ${SMOKE_TOKEN}" -H "Content-Type: application/json" -d '{"bucket":"smoke-bucket","uid":"smoke"}' >/dev/null 2>&1 || true
+# Diagnostic (non-fatal): smoke the data-plane operations the integration tests exercise and, on any
+# 5xx, dump the mgr dashboard traceback so server-side failures can be root-caused from CI logs.
+echo "Data-plane smoke test..."
+SMOKE_TOKEN="$(curl -sk -X POST https://localhost:8443/api/auth -H "Accept: application/vnd.ceph.api.v1.0+json" -H "Content-Type: application/json" -d '{"username":"admin","password":"password"}' | sed -n 's/.*"token": *"\([^"]*\)".*/\1/p')"
+
+# Version-aware request: retry once with the version the endpoint names on a 415. Echoes the code.
+capi() {
+    local method="$1" path="$2" body="${3:-}"
+    local base=(-sk -o /tmp/capi.out -w '%{http_code}' -X "${method}" "https://localhost:8443/api${path}" -H "Authorization: Bearer ${SMOKE_TOKEN}")
+    [ -n "${body}" ] && base+=(-H "Content-Type: application/json" -d "${body}")
+    local code
+    code="$(curl "${base[@]}" -H "Accept: application/vnd.ceph.api.v1.0+json")"
+    if [ "${code}" = "415" ]; then
+        local ver
+        ver="$(sed -n "s/.*endpoint is '\\([0-9.]*\\)'.*/\\1/p" /tmp/capi.out)"
+        code="$(curl "${base[@]}" -H "Accept: application/vnd.ceph.api.v${ver}+json")"
+    fi
+    echo "${code}"
+}
+
+smoke_fail=0
+echo "smoke pool: $(capi POST /pool '{"pool":"smoke-pool","pool_type":"replicated","pg_num":8,"size":2,"application_metadata":["rbd"]}')"
+echo "smoke image: $(capi POST /block/image '{"pool_name":"smoke-pool","name":"smoke-img","size":10485760}')"
 sleep 2
-SMOKE_CODE="$(curl -sk -o /tmp/rgw-del.out -w '%{http_code}' -X DELETE "https://localhost:8443/api/rgw/bucket/smoke-bucket?purge_objects=false" -H "Accept: ${V}" -H "Authorization: Bearer ${SMOKE_TOKEN}")"
-echo "RGW delete smoke: http=${SMOKE_CODE} body=$(cat /tmp/rgw-del.out 2>/dev/null)"
-if [ "${SMOKE_CODE}" != "204" ] && [ "${SMOKE_CODE}" != "200" ]; then
-    echo "--- mgr dashboard log tail (rgw/bucket errors) ---"
-    docker exec "${CEPH_CONTAINER}" bash -c 'cat /var/log/ceph/ceph-mgr.*.log 2>/dev/null | tail -200' | grep -iE 'rgw|bucket|traceback|exception|error' | tail -50 || true
+SNAP_CODE="$(capi POST '/block/image/smoke-pool%2Fsmoke-img/snap' '{"snapshot_name":"smoke-snap","mirrorImageSnapshot":false}')"
+echo "smoke snapshot: ${SNAP_CODE} $(cat /tmp/capi.out 2>/dev/null)"
+[ "${SNAP_CODE:0:1}" = "5" ] && smoke_fail=1
+curl -sk -X POST https://localhost:8443/api/rgw/user -H "Accept: application/vnd.ceph.api.v1.0+json" -H "Authorization: Bearer ${SMOKE_TOKEN}" -H "Content-Type: application/json" -d '{"uid":"smoke","display_name":"smoke"}' >/dev/null 2>&1 || true
+capi POST /rgw/bucket '{"bucket":"smoke-bucket","uid":"smoke"}' >/dev/null
+sleep 2
+DEL_CODE="$(capi DELETE /rgw/bucket/smoke-bucket)"
+echo "smoke bucket delete: ${DEL_CODE} $(cat /tmp/capi.out 2>/dev/null)"
+[ "${DEL_CODE:0:1}" = "5" ] && smoke_fail=1
+if [ "${smoke_fail}" = "1" ]; then
+    echo "--- mgr dashboard log tail (traceback) ---"
+    docker exec "${CEPH_CONTAINER}" bash -c 'cat /var/log/ceph/ceph-mgr.*.log 2>/dev/null | tail -300' | grep -iE 'traceback|typeerror|error|exception|rgw|bucket|snap' | tail -50 || true
 fi
 
 if [ -n "${GITHUB_ENV:-}" ]; then

@@ -71,9 +71,6 @@ class RgwIT {
             );
             assertThat(buckets.getBuckets(), hasItem(bucketName));
         } finally {
-            // Delete the (empty) test bucket via the default path. purgeObjects=true exercises the
-            // Dashboard's object-purge path, which returns a 500 on a single-node RGW and is not in
-            // the documented reef delete API, so it is left for a separate follow-up.
             var deleted = CephIT.withConnection(DeleteBucket.builder().id("rgwItDeleteBucket" + System.nanoTime()).type(DeleteBucket.class.getName()))
                 .bucketName(Property.ofValue(bucketName))
                 .build()

@@ -83,7 +83,12 @@ public class Create extends AbstractCephConnection implements RunnableTask<Snaps
         var spec = CephClient.imageSpec(rPoolName, rImageName);
 
         logger.info("Creating snapshot '{}' of RBD image '{}/{}'", rSnapshotName, rPoolName, rImageName);
-        session.post("/block/image/" + spec + "/snap", Map.of("snapshot_name", rSnapshotName), null);
+        // The reef snap-create endpoint expects both fields; omitting mirrorImageSnapshot triggers a
+        // server-side TypeError (HTTP 500), so send it explicitly as false for a plain snapshot.
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("snapshot_name", rSnapshotName);
+        body.put("mirrorImageSnapshot", false);
+        session.post("/block/image/" + spec + "/snap", body, null);
 
         return SnapshotSupport.findWithRetry(session, runContext, spec, rSnapshotName);
     }

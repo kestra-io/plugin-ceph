@@ -60,6 +60,6 @@ class CreateTest {
         assertThat(output.isProtected(), is(false));
 
         wireMock.verify(postRequestedFor(urlEqualTo("/api/block/image/rbd%2Fdata-volume/snap"))
-            .withRequestBody(equalToJson("{\"snapshot_name\": \"before-migration\"}")));
+            .withRequestBody(equalToJson("{\"snapshot_name\": \"before-migration\", \"mirrorImageSnapshot\": false}")));
     }
 }

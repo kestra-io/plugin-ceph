@@ -28,7 +28,7 @@ import lombok.experimental.SuperBuilder;
 @Plugin(
     examples = {
         @Example(
-            title = "Delete an RGW bucket and purge its objects",
+            title = "Delete an RGW bucket",
             full = true,
             code = """
                 id: delete_rgw_bucket
@@ -41,7 +41,6 @@ import lombok.experimental.SuperBuilder;
                     username: "admin"
                     password: "{{ secret('CEPH_DASHBOARD_PASSWORD') }}"
                     bucketName: "backups"
-                    purgeObjects: true
                 """
         )
     }
@@ -53,25 +52,15 @@ public class DeleteBucket extends AbstractCephConnection implements RunnableTask
     @PluginProperty(group = "main")
     private Property<String> bucketName;
 
-    @Schema(
-        title = "Purge objects",
-        description = "When `true`, deletes all objects in the bucket before removing it. Defaults to `false`, which fails if the bucket is not empty."
-    )
-    @NotNull
-    @Builder.Default
-    @PluginProperty(group = "reliability")
-    private Property<Boolean> purgeObjects = Property.ofValue(false);
-
     @Override
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
         var session = connect(runContext);
 
         var rBucketName = runContext.render(bucketName).as(String.class).orElseThrow(() -> new IllegalArgumentException("bucketName is required"));
-        var rPurgeObjects = runContext.render(purgeObjects).as(Boolean.class).orElse(false);
 
-        logger.info("Deleting RGW bucket '{}' (purgeObjects={})", rBucketName, rPurgeObjects);
-        var deleted = session.delete("/rgw/bucket/" + rBucketName + "?purge_objects=" + rPurgeObjects);
+        logger.info("Deleting RGW bucket '{}'", rBucketName);
+        var deleted = session.delete("/rgw/bucket/" + rBucketName);
 
         return Output.builder()
             .deleted(deleted)

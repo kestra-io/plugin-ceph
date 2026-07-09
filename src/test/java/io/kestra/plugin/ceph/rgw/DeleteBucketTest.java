@@ -36,11 +36,10 @@ class DeleteBucketTest {
 
     @Test
     void happyPath_deleted() throws Exception {
-        wireMock.stubFor(delete(urlEqualTo("/api/rgw/bucket/backups?purge_objects=true")).willReturn(noContent()));
+        wireMock.stubFor(delete(urlEqualTo("/api/rgw/bucket/backups")).willReturn(noContent()));
 
         var task = CephWireMock.withConnection(DeleteBucket.builder().id("deleteBucket" + System.nanoTime()).type(DeleteBucket.class.getName()), wireMock.httpsPort())
             .bucketName(Property.ofValue("backups"))
-            .purgeObjects(Property.ofValue(true))
             .build();
 
         var output = task.run(runContextFactory.of());
