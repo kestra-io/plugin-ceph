@@ -1,18 +1,28 @@
+# Single-node Ceph for CI integration tests. The base ceph image is used (not ceph/demo, whose
+# dashboard has a broken cherrypy dependency); .github/ceph-bootstrap.sh brings the cluster up.
+# privileged is required for the loop-backed OSD; the ext4 volume avoids overlayfs O_DIRECT issues.
+# amd64 only (the arm64 ceph-osd binary crashes), which is why the integration suite is CI-gated.
 services:
   ceph:
-    image: quay.io/ceph/demo:latest-reef
+    image: quay.io/ceph/ceph:v18
     container_name: ceph-demo
-    # Host networking is required for the dashboard (localhost:8443) and RGW (localhost:8080) to be
-    # reachable from the runner without port mapping; --privileged is required by ceph-volume to set
-    # up the OSD backing store. Only used in CI (amd64 ubuntu-latest); the OSD does not come up on an
-    # arm64 host, which is why this suite is skipped on a dev's arm64 Mac.
-    network_mode: host
     privileged: true
-    environment:
-      MON_IP: 127.0.0.1
-      CEPH_PUBLIC_NETWORK: 0.0.0.0/0
-      DEMO_DAEMONS: "osd mds rgw"
-      CEPH_DEMO_UID: demo
-      CEPH_DEMO_ACCESS_KEY: demo
-      CEPH_DEMO_SECRET_KEY: demo
-      CEPH_DEMO_BUCKET: demo-bucket
+    command: sleep infinity
+    volumes:
+      - ceph-var:/var/lib/ceph
+    networks:
+      ceph_net:
+        ipv4_address: 172.30.0.10
+    ports:
+      - "8443:8443"   # Ceph Dashboard REST API
+      - "8080:8080"   # RadosGW S3 endpoint
+
+networks:
+  ceph_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  ceph-var:

@@ -8,72 +8,33 @@ CEPH_CONTAINER="ceph-demo"
 
 docker compose -f "${repo_root}/docker-compose-ci.yml" up -d
 
-# The demo image briefly reports HEALTH_OK within a second of boot, before the mgr and OSD are
-# actually up. Gate on the mgr being active AND at least one OSD up, not just the health string,
-# otherwise the dashboard/data-plane steps run against a half-initialized cluster.
-echo "Waiting for the Ceph cluster (mon healthy, mgr active, at least one OSD up)..."
-timeout=300
+# Wait for the container (sleep infinity) to be running before exec'ing into it.
+echo "Waiting for the ${CEPH_CONTAINER} container..."
+timeout=60
 elapsed=0
-until docker exec "${CEPH_CONTAINER}" ceph -s >/tmp/ceph-status.log 2>&1 \
-    && grep -Eq "HEALTH_OK|HEALTH_WARN" /tmp/ceph-status.log \
-    && grep -Eq "mgr:.*active" /tmp/ceph-status.log \
-    && grep -Eq "osd: [0-9]+ osds: [1-9]" /tmp/ceph-status.log; do
+until [ "$(docker inspect -f '{{.State.Running}}' "${CEPH_CONTAINER}" 2>/dev/null)" = "true" ]; do
     if [ "${elapsed}" -ge "${timeout}" ]; then
-        echo "Ceph cluster did not fully come up within ${timeout}s" >&2
-        docker exec "${CEPH_CONTAINER}" ceph -s || true
+        echo "Container ${CEPH_CONTAINER} did not start within ${timeout}s" >&2
         docker compose -f "${repo_root}/docker-compose-ci.yml" logs --tail=120 || true
         exit 1
     fi
-    sleep 5
-    elapsed=$((elapsed + 5))
-done
-echo "Ceph cluster is up:"
-head -6 /tmp/ceph-status.log
-
-echo "Configuring the Ceph Dashboard..."
-docker exec "${CEPH_CONTAINER}" ceph mgr module enable dashboard --force
-# The demo image marks the module enabled but the running mgr does not always activate it (its CLI
-# commands stay unregistered, so 'ceph dashboard ...' returns EINVAL invalid command). Fail the
-# active mgr once to force a clean restart that loads all enabled modules.
-docker exec "${CEPH_CONTAINER}" ceph mgr fail || true
-
-# Poll a harmless dashboard command until it succeeds, which means the module is actually live and
-# its commands are registered.
-echo "Waiting for the dashboard module to load..."
-timeout=180
-elapsed=0
-until docker exec "${CEPH_CONTAINER}" ceph dashboard create-self-signed-cert >/tmp/ceph-dash.log 2>&1; do
-    if [ "${elapsed}" -ge "${timeout}" ]; then
-        echo "Dashboard module did not load within ${timeout}s. Last error:" >&2
-        cat /tmp/ceph-dash.log >&2 || true
-        echo "--- ceph mgr module ls ---" >&2
-        docker exec "${CEPH_CONTAINER}" ceph mgr module ls || true
-        echo "--- container log tail (mgr module load errors) ---" >&2
-        docker logs --tail 100 "${CEPH_CONTAINER}" 2>&1 | grep -iE 'dashboard|mgr|module|import|error' | tail -40 || true
-        exit 1
-    fi
-    sleep 5
-    elapsed=$((elapsed + 5))
+    sleep 2
+    elapsed=$((elapsed + 2))
 done
 
-docker exec "${CEPH_CONTAINER}" ceph config set mgr mgr/dashboard/server_addr 0.0.0.0
-docker exec "${CEPH_CONTAINER}" ceph config set mgr mgr/dashboard/ssl true
-
-# ac-user-create requires the password to come from a file rather than argv.
-docker exec "${CEPH_CONTAINER}" sh -c "printf password > /tmp/ceph-dashboard-password.txt"
-docker exec "${CEPH_CONTAINER}" ceph dashboard ac-user-create admin -i /tmp/ceph-dashboard-password.txt administrator --force-password
-
-# Bounce the module so it rebinds with the server_addr/ssl config set above.
-docker exec "${CEPH_CONTAINER}" ceph mgr module disable dashboard
-docker exec "${CEPH_CONTAINER}" ceph mgr module enable dashboard --force
+# The base image ships no orchestration, so bring up mon + mgr + OSD + dashboard + RGW explicitly.
+echo "Bootstrapping the Ceph cluster..."
+docker cp "${script_dir}/ceph-bootstrap.sh" "${CEPH_CONTAINER}:/ceph-bootstrap.sh"
+docker exec "${CEPH_CONTAINER}" bash /ceph-bootstrap.sh
 
 echo "Waiting for the dashboard service to be published by the manager..."
-timeout=180
+timeout=120
 elapsed=0
 until docker exec "${CEPH_CONTAINER}" ceph mgr services 2>/dev/null | grep -q "dashboard"; do
     if [ "${elapsed}" -ge "${timeout}" ]; then
         echo "Ceph dashboard did not come up within ${timeout}s" >&2
         docker exec "${CEPH_CONTAINER}" ceph mgr services || true
+        docker exec "${CEPH_CONTAINER}" ceph -s || true
         exit 1
     fi
     sleep 5
