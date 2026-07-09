@@ -11,8 +11,6 @@ FSID="$(uuidgen)"
 DASH_PASS="password"
 RGW_NAME="demo"
 
-echo ">> host=$HOST mon_ip=$MON_IP fsid=$FSID"
-
 cat > /etc/ceph/ceph.conf <<EOF
 [global]
 fsid = $FSID
@@ -65,12 +63,10 @@ sleep 5
 mkdir -p /var/lib/ceph/osd
 dd if=/dev/zero of=/var/lib/ceph/osd/block.img bs=1M count=8192
 LOOP="$(losetup -f --show /var/lib/ceph/osd/block.img)"
-echo ">> loop=$LOOP"
 OSD_UUID="$(uuidgen)"
 OSD_SECRET="$(ceph-authtool --gen-print-key)"
 OSD_ID="$(echo "{\"cephx_secret\": \"$OSD_SECRET\"}" | ceph osd new "$OSD_UUID" -i - \
   -n client.bootstrap-osd -k /var/lib/ceph/bootstrap-osd/ceph.keyring)"
-echo ">> osd_id=$OSD_ID"
 mkdir -p "/var/lib/ceph/osd/ceph-$OSD_ID"
 ln -sf "$LOOP" "/var/lib/ceph/osd/ceph-$OSD_ID/block"
 ceph-authtool --create-keyring "/var/lib/ceph/osd/ceph-$OSD_ID/keyring" \

@@ -5,7 +5,7 @@
 services:
   ceph:
     image: quay.io/ceph/ceph:v18
-    container_name: ceph-demo
+    container_name: ceph
     privileged: true
     command: sleep infinity
     volumes:
