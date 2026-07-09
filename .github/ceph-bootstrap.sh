@@ -27,6 +27,8 @@ osd pool default size = 1
 osd pool default min size = 1
 mon allow pool delete = true
 mon warn on pool no redundancy = false
+# Clone from unprotected snapshots (v2), so the snapshot Clone task works without a protect step.
+rbd default clone format = 2
 
 [client.rgw.$RGW_NAME]
 rgw frontends = beast port=8080

@@ -85,6 +85,10 @@ sleep 2
 SNAP_CODE="$(capi POST '/block/image/smoke-pool%2Fsmoke-img/snap' '{"snapshot_name":"smoke-snap","mirrorImageSnapshot":false}')"
 echo "smoke snapshot: ${SNAP_CODE} $(cat /tmp/capi.out 2>/dev/null)"
 [ "${SNAP_CODE:0:1}" = "5" ] && smoke_fail=1
+sleep 2
+CLONE_CODE="$(capi POST '/block/image/smoke-pool%2Fsmoke-img/snap/smoke-snap/clone' '{"child_pool_name":"smoke-pool","child_image_name":"smoke-clone"}')"
+echo "smoke clone: ${CLONE_CODE} $(cat /tmp/capi.out 2>/dev/null)"
+case "${CLONE_CODE}" in 4*|5*) smoke_fail=1 ;; esac
 curl -sk -X POST https://localhost:8443/api/rgw/user -H "Accept: application/vnd.ceph.api.v1.0+json" -H "Authorization: Bearer ${SMOKE_TOKEN}" -H "Content-Type: application/json" -d '{"uid":"smoke","display_name":"smoke"}' >/dev/null 2>&1 || true
 capi POST /rgw/bucket '{"bucket":"smoke-bucket","uid":"smoke"}' >/dev/null
 sleep 2
@@ -93,7 +97,7 @@ echo "smoke bucket delete: ${DEL_CODE} $(cat /tmp/capi.out 2>/dev/null)"
 [ "${DEL_CODE:0:1}" = "5" ] && smoke_fail=1
 if [ "${smoke_fail}" = "1" ]; then
     echo "--- mgr dashboard log tail (traceback) ---"
-    docker exec "${CEPH_CONTAINER}" bash -c 'cat /var/log/ceph/ceph-mgr.*.log 2>/dev/null | tail -300' | grep -iE 'traceback|typeerror|error|exception|rgw|bucket|snap' | tail -50 || true
+    docker exec "${CEPH_CONTAINER}" bash -c 'cat /var/log/ceph/ceph-mgr.*.log 2>/dev/null | tail -300' | grep -iE 'traceback|typeerror|error|exception|rgw|bucket|snap|clone|rbd' | tail -50 || true
 fi
 
 if [ -n "${GITHUB_ENV:-}" ]; then
