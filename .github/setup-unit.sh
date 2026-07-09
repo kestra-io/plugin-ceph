@@ -32,17 +32,31 @@ head -6 /tmp/ceph-status.log
 
 echo "Configuring the Ceph Dashboard..."
 docker exec "${CEPH_CONTAINER}" ceph mgr module enable dashboard --force
+
+# Force-enabling registers the module but the mgr needs a few seconds to actually load it before
+# the 'mgr/dashboard/*' config options and the 'ceph dashboard' commands are recognized. Poll a
+# harmless dashboard command until it succeeds, which means the module is live.
+echo "Waiting for the dashboard module to load..."
+timeout=120
+elapsed=0
+until docker exec "${CEPH_CONTAINER}" ceph dashboard create-self-signed-cert >/dev/null 2>&1; do
+    if [ "${elapsed}" -ge "${timeout}" ]; then
+        echo "Dashboard module did not load within ${timeout}s" >&2
+        docker exec "${CEPH_CONTAINER}" ceph mgr module ls || true
+        exit 1
+    fi
+    sleep 5
+    elapsed=$((elapsed + 5))
+done
+
 docker exec "${CEPH_CONTAINER}" ceph config set mgr mgr/dashboard/server_addr 0.0.0.0
 docker exec "${CEPH_CONTAINER}" ceph config set mgr mgr/dashboard/ssl true
-docker exec "${CEPH_CONTAINER}" ceph dashboard create-self-signed-cert
 
-# The dashboard module is not reliably ready to accept ac-user-create right after being enabled on
-# the demo image, and ac-user-create requires the password to come from a file rather than argv.
-docker exec "${CEPH_CONTAINER}" sh -c "echo password > /tmp/ceph-dashboard-password.txt"
+# ac-user-create requires the password to come from a file rather than argv.
+docker exec "${CEPH_CONTAINER}" sh -c "printf password > /tmp/ceph-dashboard-password.txt"
 docker exec "${CEPH_CONTAINER}" ceph dashboard ac-user-create admin -i /tmp/ceph-dashboard-password.txt administrator --force-password
 
-# Bounce the module so it picks up the server_addr/ssl config and the new admin account
-# deterministically, instead of relying on whatever state it booted with.
+# Bounce the module so it rebinds with the server_addr/ssl config set above.
 docker exec "${CEPH_CONTAINER}" ceph mgr module disable dashboard
 docker exec "${CEPH_CONTAINER}" ceph mgr module enable dashboard --force
 
