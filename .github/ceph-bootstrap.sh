@@ -46,7 +46,8 @@ ceph-authtool /etc/ceph/ceph.mon.keyring --import-keyring /var/lib/ceph/bootstra
 monmaptool --create --add "$HOST" "$MON_IP" --fsid "$FSID" /etc/ceph/monmap
 mkdir -p "/var/lib/ceph/mon/ceph-$HOST"
 chown -R ceph:ceph /var/lib/ceph/mon /etc/ceph/ceph.mon.keyring /etc/ceph/monmap
-sudo -u ceph ceph-mon --mkfs -i "$HOST" --monmap /etc/ceph/monmap --keyring /etc/ceph/ceph.mon.keyring
+ceph-mon --mkfs -i "$HOST" --monmap /etc/ceph/monmap --keyring /etc/ceph/ceph.mon.keyring \
+  --setuser ceph --setgroup ceph
 ceph-mon -i "$HOST" --setuser ceph --setgroup ceph
 sleep 3
 
@@ -74,7 +75,7 @@ ceph-authtool --create-keyring "/var/lib/ceph/osd/ceph-$OSD_ID/keyring" \
   --name "osd.$OSD_ID" --add-key "$OSD_SECRET"
 chown -R ceph:ceph "/var/lib/ceph/osd/ceph-$OSD_ID"
 chown ceph:ceph "$LOOP"
-sudo -u ceph ceph-osd -i "$OSD_ID" --mkfs --osd-uuid "$OSD_UUID"
+ceph-osd -i "$OSD_ID" --mkfs --osd-uuid "$OSD_UUID" --setuser ceph --setgroup ceph
 ceph-osd -i "$OSD_ID" --setuser ceph --setgroup ceph
 sleep 5
 
