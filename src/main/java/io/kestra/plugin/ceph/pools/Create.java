@@ -7,6 +7,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.ceph.AbstractCephConnection;
+import io.kestra.plugin.ceph.CephClient;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -125,7 +126,7 @@ public class Create extends AbstractCephConnection implements RunnableTask<PoolI
         logger.info("Creating Ceph pool '{}' (type={}, pgNum={})", rPoolName, rPoolType, rPgNum);
         session.post("/pool", body, null);
 
-        return session.getWithRetry("/pool/" + rPoolName, new com.fasterxml.jackson.core.type.TypeReference<PoolInfo>() {
+        return session.getWithRetry("/pool/" + CephClient.pathSegment(rPoolName), new com.fasterxml.jackson.core.type.TypeReference<PoolInfo>() {
         });
     }
 

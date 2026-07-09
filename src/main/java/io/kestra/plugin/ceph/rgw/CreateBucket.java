@@ -7,6 +7,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.ceph.AbstractCephConnection;
+import io.kestra.plugin.ceph.CephClient;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
@@ -80,7 +81,7 @@ public class CreateBucket extends AbstractCephConnection implements RunnableTask
         logger.info("Creating RGW bucket '{}' owned by '{}'", rBucketName, rOwner);
         session.post("/rgw/bucket", body, null);
 
-        return session.getWithRetry("/rgw/bucket/" + rBucketName, new com.fasterxml.jackson.core.type.TypeReference<BucketInfo>() {
+        return session.getWithRetry("/rgw/bucket/" + CephClient.pathSegment(rBucketName), new com.fasterxml.jackson.core.type.TypeReference<BucketInfo>() {
         });
     }
 }

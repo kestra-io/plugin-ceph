@@ -51,4 +51,20 @@ class GetTest {
         assertThat(output.size(), is(3));
         assertThat(output.pgNum(), is(32));
     }
+
+    @Test
+    void poolNameWithSpecialCharacters_isUrlEncoded() throws Exception {
+        wireMock.stubFor(get(urlEqualTo("/api/pool/my%20pool"))
+            .willReturn(okJson("""
+                {"pool": 2, "pool_name": "my pool", "type": "replicated", "size": 3, "pg_num": 32, "pg_placement_num": 32, "application_metadata": []}
+                """)));
+
+        var task = CephWireMock.withConnection(Get.builder().id("getPoolEncoded" + System.nanoTime()).type(Get.class.getName()), wireMock.httpsPort())
+            .poolName(Property.ofValue("my pool"))
+            .build();
+
+        var output = task.run(runContextFactory.of());
+
+        assertThat(output.poolName(), is("my pool"));
+    }
 }

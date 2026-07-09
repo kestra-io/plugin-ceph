@@ -41,7 +41,7 @@ Some Ceph versions create pools asynchronously via the Dashboard task manager; `
 
 ### Object Gateway (`rgw`)
 
-`rgw.ListBuckets`, `rgw.CreateBucket`, `rgw.DeleteBucket`, `rgw.ListUsers`, and `rgw.CreateUser` manage RGW buckets and users over `/api/rgw/bucket` and `/api/rgw/user`. Every bucket must have an `owner` (an existing RGW user's `uid`). `DeleteBucket` supports `purgeObjects` to remove non-empty buckets.
+`rgw.ListBuckets`, `rgw.CreateBucket`, `rgw.DeleteBucket`, `rgw.ListUsers`, and `rgw.CreateUser` manage RGW buckets and users over `/api/rgw/bucket` and `/api/rgw/user`. Every bucket must have an `owner` (an existing RGW user's `uid`). `DeleteBucket` deletes the bucket via `DELETE /api/rgw/bucket/{bucket}` and does not take a purge option.
 
 ## Triggers
 

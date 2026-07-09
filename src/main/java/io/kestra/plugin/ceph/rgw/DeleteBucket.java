@@ -8,6 +8,7 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.kestra.plugin.ceph.AbstractCephConnection;
+import io.kestra.plugin.ceph.CephClient;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -60,7 +61,7 @@ public class DeleteBucket extends AbstractCephConnection implements RunnableTask
         var rBucketName = runContext.render(bucketName).as(String.class).orElseThrow(() -> new IllegalArgumentException("bucketName is required"));
 
         logger.info("Deleting RGW bucket '{}'", rBucketName);
-        var deleted = session.delete("/rgw/bucket/" + rBucketName);
+        var deleted = session.delete("/rgw/bucket/" + CephClient.pathSegment(rBucketName));
 
         return Output.builder()
             .deleted(deleted)

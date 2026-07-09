@@ -8,6 +8,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.ceph.AbstractCephConnection;
+import io.kestra.plugin.ceph.CephClient;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -57,7 +58,7 @@ public class List extends AbstractCephConnection implements RunnableTask<List.Ou
         var session = connect(runContext);
 
         var rPoolName = poolName != null ? runContext.render(poolName).as(String.class).orElse(null) : null;
-        var path = rPoolName != null ? "/block/image?pool_name=" + rPoolName : "/block/image";
+        var path = rPoolName != null ? "/block/image?pool_name=" + CephClient.pathSegment(rPoolName) : "/block/image";
 
         logger.info("Listing RBD images{}", rPoolName != null ? " in pool '" + rPoolName + "'" : "");
         java.util.List<PoolImageGroup> groups = session.get(path, new TypeReference<>() {

@@ -106,6 +106,7 @@ public class OnClusterHealthDegraded extends AbstractTrigger implements PollingT
         title = "Password",
         description = "Password for the Ceph Dashboard account. Never logged. Required unless `token` is set; ignored otherwise."
     )
+    @ToString.Exclude
     @PluginProperty(secret = true, group = "connection")
     private Property<String> password;
 
@@ -115,6 +116,7 @@ public class OnClusterHealthDegraded extends AbstractTrigger implements PollingT
             "(Ceph default 8h TTL) and is NOT auto-renewed: since this trigger polls indefinitely, do not use `token` " +
             "here, use `username`/`password` instead so the session is re-authenticated on every poll."
     )
+    @ToString.Exclude
     @PluginProperty(secret = true, group = "connection")
     private Property<String> token;
 

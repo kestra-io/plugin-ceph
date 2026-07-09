@@ -7,6 +7,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.ceph.AbstractCephConnection;
+import io.kestra.plugin.ceph.CephClient;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
@@ -59,7 +60,7 @@ public class Get extends AbstractCephConnection implements RunnableTask<PoolInfo
         var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
 
         logger.info("Fetching Ceph pool '{}'", rPoolName);
-        return session.get("/pool/" + rPoolName, new com.fasterxml.jackson.core.type.TypeReference<PoolInfo>() {
+        return session.get("/pool/" + CephClient.pathSegment(rPoolName), new com.fasterxml.jackson.core.type.TypeReference<PoolInfo>() {
         });
     }
 }

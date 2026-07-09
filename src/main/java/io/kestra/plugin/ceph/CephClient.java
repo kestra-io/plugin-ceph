@@ -233,10 +233,21 @@ public final class CephClient {
 
     /**
      * Builds the composite {@code image_spec} path segment (`{pool_name}/{image_name}`) used by the
-     * RBD image and snapshot endpoints, percent-encoding the separating slash as the API expects.
+     * RBD image and snapshot endpoints, percent-encoding each part individually and joining them
+     * with an encoded slash (`%2F`) as the API expects.
      */
     public static String imageSpec(String poolName, String imageName) {
-        return URLEncoder.encode(poolName + "/" + imageName, StandardCharsets.UTF_8);
+        return pathSegment(poolName) + "%2F" + pathSegment(imageName);
+    }
+
+    /**
+     * Percent-encodes a single value for safe use as one path segment (or query parameter value) in
+     * a Ceph Dashboard API URI. {@link URLEncoder#encode(String, java.nio.charset.Charset)} is built
+     * for form bodies and encodes a space as {@code +}, which is invalid in a URI path, so it is
+     * replaced with the correct {@code %20} afterwards.
+     */
+    public static String pathSegment(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
     private static List<String> extractSummary(Object checks) {

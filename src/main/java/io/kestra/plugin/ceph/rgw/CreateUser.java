@@ -7,6 +7,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.ceph.AbstractCephConnection;
+import io.kestra.plugin.ceph.CephClient;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
@@ -87,7 +88,7 @@ public class CreateUser extends AbstractCephConnection implements RunnableTask<U
 
         return created != null
             ? created
-            : session.get("/rgw/user/" + rUid, new com.fasterxml.jackson.core.type.TypeReference<UserInfo>() {
+            : session.get("/rgw/user/" + CephClient.pathSegment(rUid), new com.fasterxml.jackson.core.type.TypeReference<UserInfo>() {
             });
     }
 }

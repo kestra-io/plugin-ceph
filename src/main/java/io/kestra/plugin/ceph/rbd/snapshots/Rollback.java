@@ -77,7 +77,7 @@ public class Rollback extends AbstractCephConnection implements RunnableTask<Rol
         var spec = CephClient.imageSpec(rPoolName, rImageName);
 
         logger.info("Rolling back RBD image '{}/{}' to snapshot '{}'", rPoolName, rImageName, rSnapshotName);
-        session.post("/block/image/" + spec + "/snap/" + rSnapshotName + "/rollback", null, null);
+        session.post("/block/image/" + spec + "/snap/" + CephClient.pathSegment(rSnapshotName) + "/rollback", null, null);
 
         return Output.builder()
             .message("Image '" + rPoolName + "/" + rImageName + "' rolled back to snapshot '" + rSnapshotName + "'.")

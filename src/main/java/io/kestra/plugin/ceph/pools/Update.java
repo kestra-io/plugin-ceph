@@ -7,6 +7,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.ceph.AbstractCephConnection;
+import io.kestra.plugin.ceph.CephClient;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -100,9 +101,10 @@ public class Update extends AbstractCephConnection implements RunnableTask<PoolI
         }
 
         logger.info("Updating Ceph pool '{}' with {}", rPoolName, body.keySet());
-        session.put("/pool/" + rPoolName, body, null);
+        var pathSegment = CephClient.pathSegment(rPoolName);
+        session.put("/pool/" + pathSegment, body, null);
 
-        return session.get("/pool/" + rPoolName, new com.fasterxml.jackson.core.type.TypeReference<PoolInfo>() {
+        return session.get("/pool/" + pathSegment, new com.fasterxml.jackson.core.type.TypeReference<PoolInfo>() {
         });
     }
 }

@@ -57,6 +57,7 @@ public abstract class AbstractCephConnection extends Task {
         title = "Password",
         description = "Password for the Ceph Dashboard account. Never logged. Required unless `token` is set; ignored otherwise."
     )
+    @ToString.Exclude
     @PluginProperty(secret = true, group = "connection")
     protected Property<String> password;
 
@@ -67,6 +68,7 @@ public abstract class AbstractCephConnection extends Task {
             "in triggers or scheduled flows; use username/password there instead. Mutually exclusive with `password`: " +
             "when set, `username`/`password` are ignored."
     )
+    @ToString.Exclude
     @PluginProperty(secret = true, group = "connection")
     protected Property<String> token;
 

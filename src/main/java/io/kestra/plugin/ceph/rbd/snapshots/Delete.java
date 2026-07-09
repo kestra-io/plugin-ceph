@@ -77,7 +77,7 @@ public class Delete extends AbstractCephConnection implements RunnableTask<Delet
         var spec = CephClient.imageSpec(rPoolName, rImageName);
 
         logger.info("Deleting snapshot '{}' of RBD image '{}/{}'", rSnapshotName, rPoolName, rImageName);
-        var deleted = session.delete("/block/image/" + spec + "/snap/" + rSnapshotName);
+        var deleted = session.delete("/block/image/" + spec + "/snap/" + CephClient.pathSegment(rSnapshotName));
 
         return Output.builder()
             .deleted(deleted)
