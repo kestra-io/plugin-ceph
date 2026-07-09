@@ -8,24 +8,30 @@ CEPH_CONTAINER="ceph-demo"
 
 docker compose -f "${repo_root}/docker-compose-ci.yml" up -d
 
-echo "Waiting for the Ceph cluster to reach HEALTH_OK or HEALTH_WARN..."
-timeout=180
+# The demo image briefly reports HEALTH_OK within a second of boot, before the mgr and OSD are
+# actually up. Gate on the mgr being active AND at least one OSD up, not just the health string,
+# otherwise the dashboard/data-plane steps run against a half-initialized cluster.
+echo "Waiting for the Ceph cluster (mon healthy, mgr active, at least one OSD up)..."
+timeout=300
 elapsed=0
-until docker exec "${CEPH_CONTAINER}" ceph -s >/tmp/ceph-status.log 2>&1 && grep -Eq "HEALTH_OK|HEALTH_WARN" /tmp/ceph-status.log; do
+until docker exec "${CEPH_CONTAINER}" ceph -s >/tmp/ceph-status.log 2>&1 \
+    && grep -Eq "HEALTH_OK|HEALTH_WARN" /tmp/ceph-status.log \
+    && grep -Eq "mgr:.*active" /tmp/ceph-status.log \
+    && grep -Eq "osd: [0-9]+ osds: [1-9]" /tmp/ceph-status.log; do
     if [ "${elapsed}" -ge "${timeout}" ]; then
-        echo "Ceph cluster did not become healthy within ${timeout}s" >&2
+        echo "Ceph cluster did not fully come up within ${timeout}s" >&2
         docker exec "${CEPH_CONTAINER}" ceph -s || true
-        docker compose -f "${repo_root}/docker-compose-ci.yml" logs || true
+        docker compose -f "${repo_root}/docker-compose-ci.yml" logs --tail=120 || true
         exit 1
     fi
     sleep 5
     elapsed=$((elapsed + 5))
 done
-echo "Ceph cluster is healthy:"
-head -3 /tmp/ceph-status.log
+echo "Ceph cluster is up:"
+head -6 /tmp/ceph-status.log
 
 echo "Configuring the Ceph Dashboard..."
-docker exec "${CEPH_CONTAINER}" ceph mgr module enable dashboard
+docker exec "${CEPH_CONTAINER}" ceph mgr module enable dashboard --force
 docker exec "${CEPH_CONTAINER}" ceph config set mgr mgr/dashboard/server_addr 0.0.0.0
 docker exec "${CEPH_CONTAINER}" ceph config set mgr mgr/dashboard/ssl true
 docker exec "${CEPH_CONTAINER}" ceph dashboard create-self-signed-cert
@@ -38,7 +44,7 @@ docker exec "${CEPH_CONTAINER}" ceph dashboard ac-user-create admin -i /tmp/ceph
 # Bounce the module so it picks up the server_addr/ssl config and the new admin account
 # deterministically, instead of relying on whatever state it booted with.
 docker exec "${CEPH_CONTAINER}" ceph mgr module disable dashboard
-docker exec "${CEPH_CONTAINER}" ceph mgr module enable dashboard
+docker exec "${CEPH_CONTAINER}" ceph mgr module enable dashboard --force
 
 echo "Waiting for the dashboard service to be published by the manager..."
 timeout=180
