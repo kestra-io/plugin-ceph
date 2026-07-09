@@ -111,35 +111,20 @@ public final class CephClient {
         Object body,
         boolean allowNotFound
     ) throws IOException, IllegalVariableEvaluationException, HttpClientException {
-        var requestBuilder = HttpRequest.builder()
-            .method(method)
-            .uri(URI.create(uri))
-            .addHeader("Accept", API_VERSION_HEADER);
-
-        if (token != null) {
-            requestBuilder.addHeader("Authorization", "Bearer " + token);
-        }
-
-        if (body != null) {
-            requestBuilder
-                .addHeader("Content-Type", "application/json")
-                .body(HttpRequest.JsonRequestBody.builder().content(body).build());
-        }
-
-        // allowFailed=true so non-2xx responses are returned normally (with the body parsed as the
-        // requested String type) instead of being thrown as an HttpClientResponseException whose
-        // wrapped response body type is not guaranteed to match. Status codes are checked below.
-        var config = HttpConfiguration.builder()
-            .allowFailed(Property.ofValue(true))
-            .ssl(SslOptions.builder().insecureTrustAllCertificates(Property.ofValue(skipSsl)).build())
-            .build();
-
-        HttpResponse<String> response;
-        try (var client = new HttpClient(runContext, config)) {
-            response = client.request(requestBuilder.build(), String.class);
-        }
-
+        var response = send(runContext, method, uri, token, skipSsl, body, API_VERSION_HEADER);
         var status = response.getStatus() != null ? response.getStatus().getCode() : 0;
+
+        // The Ceph API is versioned per endpoint: some endpoints require a newer version than the
+        // default 1.0 and answer 415 stating the version they expect (e.g. "endpoint is '2.0'").
+        // Retry once with the version the server names so callers do not need per-endpoint knowledge.
+        if (status == 415) {
+            var required = parseRequiredVersion(response.getBody());
+            if (required != null) {
+                response = send(runContext, method, uri, token, skipSsl, body,
+                    "application/vnd.ceph.api.v" + required + "+json");
+                status = response.getStatus() != null ? response.getStatus().getCode() : 0;
+            }
+        }
 
         if (status == 401 || status == 403) {
             throw new IllegalStateException(
@@ -158,6 +143,57 @@ public final class CephClient {
         }
 
         return response;
+    }
+
+    /**
+     * Sends a single request with the given Accept version header. allowFailed=true so non-2xx
+     * responses are returned normally (with the body parsed as String) rather than thrown as an
+     * HttpClientResponseException whose wrapped body type is not guaranteed to match.
+     */
+    private static HttpResponse<String> send(
+        RunContext runContext,
+        String method,
+        String uri,
+        String token,
+        boolean skipSsl,
+        Object body,
+        String acceptHeader
+    ) throws IOException, IllegalVariableEvaluationException, HttpClientException {
+        var requestBuilder = HttpRequest.builder()
+            .method(method)
+            .uri(URI.create(uri))
+            .addHeader("Accept", acceptHeader);
+
+        if (token != null) {
+            requestBuilder.addHeader("Authorization", "Bearer " + token);
+        }
+
+        if (body != null) {
+            requestBuilder
+                .addHeader("Content-Type", "application/json")
+                .body(HttpRequest.JsonRequestBody.builder().content(body).build());
+        }
+
+        var config = HttpConfiguration.builder()
+            .allowFailed(Property.ofValue(true))
+            .ssl(SslOptions.builder().insecureTrustAllCertificates(Property.ofValue(skipSsl)).build())
+            .build();
+
+        try (var client = new HttpClient(runContext, config)) {
+            return client.request(requestBuilder.build(), String.class);
+        }
+    }
+
+    /**
+     * Extracts the major.minor version from a 415 body, e.g. {@code "endpoint is '2.0'"} yields
+     * {@code "2.0"}. Returns {@code null} if no version can be parsed.
+     */
+    private static String parseRequiredVersion(String body) {
+        if (body == null) {
+            return null;
+        }
+        var matcher = java.util.regex.Pattern.compile("endpoint is '([0-9]+\\.[0-9]+)'").matcher(body);
+        return matcher.find() ? matcher.group(1) : null;
     }
 
     private static String truncate(String body) {

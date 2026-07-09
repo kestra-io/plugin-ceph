@@ -58,6 +58,21 @@ done
 
 echo "Ceph Dashboard API is ready on https://localhost:8443"
 
+# Diagnostic (non-fatal): exercise RGW bucket delete via the dashboard and, if it fails, dump the
+# mgr dashboard traceback so the RGW 500 seen in the integration test can be root-caused.
+echo "RGW bucket delete smoke test..."
+V="application/vnd.ceph.api.v1.0+json"
+SMOKE_TOKEN="$(curl -sk -X POST https://localhost:8443/api/auth -H "Accept: ${V}" -H "Content-Type: application/json" -d '{"username":"admin","password":"password"}' | sed -n 's/.*"token": *"\([^"]*\)".*/\1/p')"
+curl -sk -X POST https://localhost:8443/api/rgw/user -H "Accept: ${V}" -H "Authorization: Bearer ${SMOKE_TOKEN}" -H "Content-Type: application/json" -d '{"uid":"smoke","display_name":"smoke"}' >/dev/null 2>&1 || true
+curl -sk -X POST https://localhost:8443/api/rgw/bucket -H "Accept: ${V}" -H "Authorization: Bearer ${SMOKE_TOKEN}" -H "Content-Type: application/json" -d '{"bucket":"smoke-bucket","uid":"smoke"}' >/dev/null 2>&1 || true
+sleep 2
+SMOKE_CODE="$(curl -sk -o /tmp/rgw-del.out -w '%{http_code}' -X DELETE "https://localhost:8443/api/rgw/bucket/smoke-bucket?purge_objects=false" -H "Accept: ${V}" -H "Authorization: Bearer ${SMOKE_TOKEN}")"
+echo "RGW delete smoke: http=${SMOKE_CODE} body=$(cat /tmp/rgw-del.out 2>/dev/null)"
+if [ "${SMOKE_CODE}" != "204" ] && [ "${SMOKE_CODE}" != "200" ]; then
+    echo "--- mgr dashboard log tail (rgw/bucket errors) ---"
+    docker exec "${CEPH_CONTAINER}" bash -c 'cat /var/log/ceph/ceph-mgr.*.log 2>/dev/null | tail -200' | grep -iE 'rgw|bucket|traceback|exception|error' | tail -50 || true
+fi
+
 if [ -n "${GITHUB_ENV:-}" ]; then
     {
         echo "CEPH_IT=true"
