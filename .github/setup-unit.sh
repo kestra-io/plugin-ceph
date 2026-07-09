@@ -39,10 +39,12 @@ docker exec "${CEPH_CONTAINER}" ceph mgr module enable dashboard --force
 echo "Waiting for the dashboard module to load..."
 timeout=120
 elapsed=0
-until docker exec "${CEPH_CONTAINER}" ceph dashboard create-self-signed-cert >/dev/null 2>&1; do
+until docker exec "${CEPH_CONTAINER}" ceph dashboard create-self-signed-cert >/tmp/ceph-dash.log 2>&1; do
     if [ "${elapsed}" -ge "${timeout}" ]; then
-        echo "Dashboard module did not load within ${timeout}s" >&2
+        echo "Dashboard module did not load within ${timeout}s. Last error:" >&2
+        cat /tmp/ceph-dash.log >&2 || true
         docker exec "${CEPH_CONTAINER}" ceph mgr module ls || true
+        docker exec "${CEPH_CONTAINER}" ceph -s || true
         exit 1
     fi
     sleep 5
