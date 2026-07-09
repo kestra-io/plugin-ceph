@@ -25,7 +25,12 @@ import java.util.Map;
 @NoArgsConstructor
 @Schema(
     title = "Create an RGW bucket",
-    description = "Calls `POST /api/rgw/bucket` and returns the resulting bucket."
+    description = """
+        Calls `POST /api/rgw/bucket` and returns the resulting bucket. Some Ceph versions process \
+        bucket creation asynchronously via the Dashboard task manager, so the follow-up fetch may \
+        briefly 404 right after the POST; this task retries it for up to ~10 seconds (10 attempts, \
+        1s apart) before failing.
+        """
 )
 @Plugin(
     examples = {
@@ -75,7 +80,7 @@ public class CreateBucket extends AbstractCephConnection implements RunnableTask
         logger.info("Creating RGW bucket '{}' owned by '{}'", rBucketName, rOwner);
         session.post("/rgw/bucket", body, null);
 
-        return session.get("/rgw/bucket/" + rBucketName, new com.fasterxml.jackson.core.type.TypeReference<BucketInfo>() {
+        return session.getWithRetry("/rgw/bucket/" + rBucketName, new com.fasterxml.jackson.core.type.TypeReference<BucketInfo>() {
         });
     }
 }

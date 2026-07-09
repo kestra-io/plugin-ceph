@@ -29,8 +29,9 @@ import java.util.Map;
     title = "Create an RBD image",
     description = """
         Calls `POST /api/block/image`. Some Ceph versions process image creation asynchronously via \
-        the Dashboard task manager; this task issues the request and immediately fetches the \
-        resulting image, which may briefly reflect an in-progress state until Ceph finishes creating it.
+        the Dashboard task manager, so the follow-up fetch of the resulting image may briefly 404 \
+        right after the POST; this task retries it for up to ~10 seconds (10 attempts, 1s apart) \
+        before failing.
         """
 )
 @Plugin(
@@ -91,7 +92,7 @@ public class Create extends AbstractCephConnection implements RunnableTask<RbdIm
         session.post("/block/image", body, null);
 
         var spec = CephClient.imageSpec(rPoolName, rImageName);
-        return session.get("/block/image/" + spec, new com.fasterxml.jackson.core.type.TypeReference<RbdImageInfo>() {
+        return session.getWithRetry("/block/image/" + spec, new com.fasterxml.jackson.core.type.TypeReference<RbdImageInfo>() {
         }).withPoolName(rPoolName);
     }
 }

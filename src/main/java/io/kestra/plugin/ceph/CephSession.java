@@ -15,6 +15,14 @@ import java.io.IOException;
  */
 public final class CephSession {
 
+    /**
+     * Default bound for {@link #getWithRetry(String, TypeReference)}: 10 attempts, 1 second apart
+     * (~10s total), enough to ride out the Ceph Dashboard task manager processing a create
+     * operation asynchronously without stalling a flow indefinitely on a genuinely missing resource.
+     */
+    public static final int DEFAULT_RETRY_ATTEMPTS = 10;
+    public static final long DEFAULT_RETRY_DELAY_MILLIS = 1000L;
+
     private final RunContext runContext;
     private final String baseUrl;
     private final String token;
@@ -29,6 +37,53 @@ public final class CephSession {
 
     public <T> T get(String path, TypeReference<T> type) throws IOException, IllegalVariableEvaluationException, HttpClientException {
         return parse(exec("GET", path, null, false), type);
+    }
+
+    /**
+     * Fetches {@code path} using the default retry bound. See
+     * {@link #getWithRetry(String, TypeReference, int, long)}.
+     */
+    public <T> T getWithRetry(String path, TypeReference<T> type) throws IOException, IllegalVariableEvaluationException, HttpClientException {
+        return getWithRetry(path, type, DEFAULT_RETRY_ATTEMPTS, DEFAULT_RETRY_DELAY_MILLIS);
+    }
+
+    /**
+     * Fetches {@code path}, tolerating a transient HTTP 404 for up to {@code attempts} tries. The
+     * Ceph Dashboard processes some create operations asynchronously via its task manager, so a GET
+     * issued right after a POST can briefly still 404 before the resource becomes visible. Sleeps
+     * {@code delayMillis} between attempts and returns the parsed body as soon as it appears;
+     * rethrows once attempts are exhausted.
+     */
+    public <T> T getWithRetry(String path, TypeReference<T> type, int attempts, long delayMillis)
+        throws IOException, IllegalVariableEvaluationException, HttpClientException {
+        HttpResponse<String> response;
+        var attempt = 1;
+        while (true) {
+            response = exec("GET", path, null, true);
+            if (response.getStatus().getCode() != 404 || attempt >= attempts) {
+                break;
+            }
+            runContext.logger().debug("Resource not yet available at '{}', retrying in {}ms (attempt {}/{})", path, delayMillis, attempt, attempts);
+            sleep(delayMillis);
+            attempt++;
+        }
+
+        if (response.getStatus().getCode() == 404) {
+            throw new IllegalStateException(
+                "Ceph Dashboard resource still not found after " + attempts + " attempts (~" + (attempts * delayMillis) + "ms) waiting for asynchronous creation: GET " + path
+            );
+        }
+
+        return parse(response, type);
+    }
+
+    private static void sleep(long delayMillis) {
+        try {
+            Thread.sleep(delayMillis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for a Ceph Dashboard resource to become available", e);
+        }
     }
 
     public <T> T post(String path, Object body, TypeReference<T> type) throws IOException, IllegalVariableEvaluationException, HttpClientException {

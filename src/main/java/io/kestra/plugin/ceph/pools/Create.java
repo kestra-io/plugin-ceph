@@ -31,8 +31,9 @@ import java.util.Map;
     title = "Create a Ceph pool",
     description = """
         Calls `POST /api/pool`. Some Ceph versions process pool creation asynchronously via the \
-        Dashboard task manager; this task issues the request and immediately fetches the resulting \
-        pool, which may briefly reflect an in-progress state until Ceph finishes creating it.
+        Dashboard task manager, so the follow-up fetch of the resulting pool may briefly 404 right \
+        after the POST; this task retries it for up to ~10 seconds (10 attempts, 1s apart) before \
+        failing.
         """
 )
 @Plugin(
@@ -124,7 +125,7 @@ public class Create extends AbstractCephConnection implements RunnableTask<PoolI
         logger.info("Creating Ceph pool '{}' (type={}, pgNum={})", rPoolName, rPoolType, rPgNum);
         session.post("/pool", body, null);
 
-        return session.get("/pool/" + rPoolName, new com.fasterxml.jackson.core.type.TypeReference<PoolInfo>() {
+        return session.getWithRetry("/pool/" + rPoolName, new com.fasterxml.jackson.core.type.TypeReference<PoolInfo>() {
         });
     }
 

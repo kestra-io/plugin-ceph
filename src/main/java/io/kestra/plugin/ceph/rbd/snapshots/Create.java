@@ -25,7 +25,12 @@ import java.util.Map;
 @NoArgsConstructor
 @Schema(
     title = "Create an RBD snapshot",
-    description = "Calls `POST /api/block/image/{image_spec}/snap` and returns the resulting snapshot."
+    description = """
+        Calls `POST /api/block/image/{image_spec}/snap` and returns the resulting snapshot. Some \
+        Ceph versions process snapshot creation asynchronously via the Dashboard task manager, so \
+        the new snapshot may briefly be missing from the parent image's snapshot list right after \
+        the POST; this task retries the lookup for up to ~10 seconds (10 attempts, 1s apart).
+        """
 )
 @Plugin(
     examples = {
@@ -80,9 +85,6 @@ public class Create extends AbstractCephConnection implements RunnableTask<Snaps
         logger.info("Creating snapshot '{}' of RBD image '{}/{}'", rSnapshotName, rPoolName, rImageName);
         session.post("/block/image/" + spec + "/snap", Map.of("snapshot_name", rSnapshotName), null);
 
-        return SnapshotSupport.fetchSnapshots(session, spec).stream()
-            .filter(snapshot -> rSnapshotName.equals(snapshot.name()))
-            .findFirst()
-            .orElse(new SnapshotInfo(null, rSnapshotName, null, null, null));
+        return SnapshotSupport.findWithRetry(session, runContext, spec, rSnapshotName);
     }
 }

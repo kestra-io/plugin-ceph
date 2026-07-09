@@ -79,19 +79,8 @@ ceph-osd -i "$OSD_ID" --mkfs --osd-uuid "$OSD_UUID" --setuser ceph --setgroup ce
 ceph-osd -i "$OSD_ID" --setuser ceph --setgroup ceph
 sleep 5
 
-# dashboard (base image has a working cherrypy, unlike the demo image)
-ceph mgr module enable dashboard
-ceph config set mgr mgr/dashboard/server_addr 0.0.0.0
-ceph config set mgr mgr/dashboard/ssl true
-ceph dashboard create-self-signed-cert
-printf '%s' "$DASH_PASS" > /tmp/dashpass
-ceph dashboard ac-user-create admin -i /tmp/dashpass administrator --force-password
-rm -f /tmp/dashpass
-ceph mgr module disable dashboard
-ceph mgr module enable dashboard
-sleep 6
-
-# RGW (needed by the rgw integration tests). radosgw auto-creates its pools on first start.
+# RGW first, so its system-user credentials are in place before the dashboard activates and needs
+# them. radosgw auto-creates its pools on first start.
 mkdir -p "/var/lib/ceph/radosgw/ceph-rgw.$RGW_NAME"
 ceph auth get-or-create "client.rgw.$RGW_NAME" mon 'allow rw' osd 'allow rwx' mgr 'allow rw' \
   > "/var/lib/ceph/radosgw/ceph-rgw.$RGW_NAME/keyring"
@@ -99,15 +88,28 @@ chown -R ceph:ceph "/var/lib/ceph/radosgw"
 radosgw -n "client.rgw.$RGW_NAME" --setuser ceph --setgroup ceph
 sleep 5
 
-# Give the dashboard a system RGW user so all bucket/user admin ops work, including bucket delete
-# (which needs write caps the auto-provisioned dashboard user does not have).
+# A system RGW user, whose keys the dashboard uses for all bucket/user admin ops (bucket delete
+# needs write caps the auto-provisioned dashboard user does not have).
 radosgw-admin user create --uid=dashboard --display-name="dashboard admin" --system \
   --access-key=dashboardaccesskey --secret-key=dashboardsecretkey >/dev/null 2>&1 || true
+
+# dashboard (base image has a working cherrypy, unlike the demo image)
+ceph mgr module enable dashboard
+ceph config set mgr mgr/dashboard/server_addr 0.0.0.0
+ceph config set mgr mgr/dashboard/ssl true
+ceph dashboard create-self-signed-cert
 printf '%s' "dashboardaccesskey" > /tmp/rgw-ak
 printf '%s' "dashboardsecretkey" > /tmp/rgw-sk
 ceph dashboard set-rgw-api-access-key -i /tmp/rgw-ak
 ceph dashboard set-rgw-api-secret-key -i /tmp/rgw-sk
 rm -f /tmp/rgw-ak /tmp/rgw-sk
+printf '%s' "$DASH_PASS" > /tmp/dashpass
+ceph dashboard ac-user-create admin -i /tmp/dashpass administrator --force-password
+rm -f /tmp/dashpass
+# Bounce so the dashboard activates with the RGW api credentials set above.
+ceph mgr module disable dashboard
+ceph mgr module enable dashboard
+sleep 6
 
 echo "===== STATUS ====="
 ceph -s

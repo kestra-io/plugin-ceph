@@ -109,7 +109,7 @@ public class Clone extends AbstractCephConnection implements RunnableTask<RbdIma
         session.post("/block/image/" + spec + "/snap/" + rSnapshotName + "/clone", body, null);
 
         var childSpec = CephClient.imageSpec(rChildPoolName, rChildImageName);
-        return session.get("/block/image/" + childSpec, new com.fasterxml.jackson.core.type.TypeReference<RbdImageInfo>() {
+        return session.getWithRetry("/block/image/" + childSpec, new com.fasterxml.jackson.core.type.TypeReference<RbdImageInfo>() {
         }).withPoolName(rChildPoolName);
     }
 }

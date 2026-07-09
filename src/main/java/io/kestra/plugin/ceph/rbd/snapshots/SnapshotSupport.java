@@ -2,6 +2,7 @@ package io.kestra.plugin.ceph.rbd.snapshots;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.http.client.HttpClientException;
+import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.ceph.CephClient;
 import io.kestra.plugin.ceph.CephSession;
 
@@ -28,5 +29,46 @@ final class SnapshotSupport {
         }
         return CephClient.MAPPER.convertValue(raw, new com.fasterxml.jackson.core.type.TypeReference<List<SnapshotInfo>>() {
         });
+    }
+
+    /**
+     * Looks up a just-created snapshot by name, retrying for up to
+     * {@link CephSession#DEFAULT_RETRY_ATTEMPTS} tries: the parent image already exists so its GET
+     * never 404s, but Ceph's task manager can process the snapshot creation asynchronously, so the
+     * new entry can briefly be missing from the {@code snapshots} array. Falls back to a minimal
+     * {@link SnapshotInfo} once attempts are exhausted, preserving the previous behaviour for a
+     * snapshot that genuinely never appears.
+     */
+    static SnapshotInfo findWithRetry(CephSession session, RunContext runContext, String imageSpec, String snapshotName)
+        throws IOException, IllegalVariableEvaluationException, HttpClientException {
+        var attempts = CephSession.DEFAULT_RETRY_ATTEMPTS;
+        var delayMillis = CephSession.DEFAULT_RETRY_DELAY_MILLIS;
+
+        for (var attempt = 1; attempt <= attempts; attempt++) {
+            var found = fetchSnapshots(session, imageSpec).stream()
+                .filter(snapshot -> snapshotName.equals(snapshot.name()))
+                .findFirst();
+
+            if (found.isPresent() || attempt == attempts) {
+                return found.orElse(new SnapshotInfo(null, snapshotName, null, null, null));
+            }
+
+            runContext.logger().debug(
+                "Snapshot '{}' not yet visible on image '{}', retrying in {}ms (attempt {}/{})",
+                snapshotName, imageSpec, delayMillis, attempt, attempts
+            );
+            sleep(delayMillis);
+        }
+
+        return new SnapshotInfo(null, snapshotName, null, null, null);
+    }
+
+    private static void sleep(long delayMillis) {
+        try {
+            Thread.sleep(delayMillis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for a Ceph Dashboard snapshot to become visible", e);
+        }
     }
 }
