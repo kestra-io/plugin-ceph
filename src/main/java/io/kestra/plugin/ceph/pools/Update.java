@@ -1,5 +1,6 @@
 package io.kestra.plugin.ceph.pools;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -29,7 +30,12 @@ import java.util.Map;
 @NoArgsConstructor
 @Schema(
     title = "Update a Ceph pool",
-    description = "Calls `PUT /api/pool/{pool_name}` with only the fields explicitly set, then returns the updated pool."
+    description = """
+        Calls `PUT /api/pool/{pool_name}` with only the fields explicitly set, then returns the \
+        updated pool. Some Ceph versions process pool updates asynchronously via the Dashboard task \
+        manager, so the follow-up fetch may briefly 404 right after the PUT; this task retries it \
+        for up to ~10 seconds (10 attempts, 1s apart) before failing.
+        """
 )
 @Plugin(
     examples = {
@@ -104,7 +110,7 @@ public class Update extends AbstractCephConnection implements RunnableTask<PoolI
         var pathSegment = CephClient.pathSegment(rPoolName);
         session.put("/pool/" + pathSegment, body, null);
 
-        return session.get("/pool/" + pathSegment, new com.fasterxml.jackson.core.type.TypeReference<PoolInfo>() {
+        return session.getWithRetry("/pool/" + pathSegment, new TypeReference<PoolInfo>() {
         });
     }
 }

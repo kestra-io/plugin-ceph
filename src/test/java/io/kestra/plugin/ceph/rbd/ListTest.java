@@ -10,7 +10,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -57,5 +60,24 @@ class ListTest {
         assertThat(output.getImages(), hasSize(2));
         assertThat(output.getImages().getFirst().poolName(), is("rbd"));
         assertThat(output.getImages().getFirst().name(), is("data-volume"));
+    }
+
+    @Test
+    void versionMismatch_retriesWithServerRequiredAcceptHeader() throws Exception {
+        wireMock.stubFor(get(urlEqualTo("/api/block/image"))
+            .withHeader("Accept", equalTo("application/vnd.ceph.api.v1.0+json"))
+            .willReturn(aResponse().withStatus(415).withBody("API endpoint is '2.0'")));
+        wireMock.stubFor(get(urlEqualTo("/api/block/image"))
+            .withHeader("Accept", equalTo("application/vnd.ceph.api.v2.0+json"))
+            .willReturn(okJson("[]")));
+
+        var task = CephWireMock.withConnection(List.builder().id("listRbdVersion" + System.nanoTime()).type(List.class.getName()), wireMock.httpsPort())
+            .build();
+
+        var output = task.run(runContextFactory.of());
+
+        assertThat(output.getTotal(), is(0));
+        wireMock.verify(getRequestedFor(urlEqualTo("/api/block/image"))
+            .withHeader("Accept", equalTo("application/vnd.ceph.api.v2.0+json")));
     }
 }

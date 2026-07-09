@@ -1,5 +1,6 @@
 package io.kestra.plugin.ceph.rgw;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -83,12 +84,12 @@ public class CreateUser extends AbstractCephConnection implements RunnableTask<U
         }
 
         logger.info("Creating RGW user '{}'", rUid);
-        var created = session.post("/rgw/user", body, new com.fasterxml.jackson.core.type.TypeReference<UserInfo>() {
+        var created = session.post("/rgw/user", body, new TypeReference<UserInfo>() {
         });
 
         return created != null
             ? created
-            : session.get("/rgw/user/" + CephClient.pathSegment(rUid), new com.fasterxml.jackson.core.type.TypeReference<UserInfo>() {
+            : session.get("/rgw/user/" + CephClient.pathSegment(rUid), new TypeReference<UserInfo>() {
             });
     }
 }

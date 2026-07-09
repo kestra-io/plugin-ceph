@@ -1,5 +1,6 @@
 package io.kestra.plugin.ceph.rgw;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -81,7 +82,7 @@ public class CreateBucket extends AbstractCephConnection implements RunnableTask
         logger.info("Creating RGW bucket '{}' owned by '{}'", rBucketName, rOwner);
         session.post("/rgw/bucket", body, null);
 
-        return session.getWithRetry("/rgw/bucket/" + CephClient.pathSegment(rBucketName), new com.fasterxml.jackson.core.type.TypeReference<BucketInfo>() {
+        return session.getWithRetry("/rgw/bucket/" + CephClient.pathSegment(rBucketName), new TypeReference<BucketInfo>() {
         });
     }
 }

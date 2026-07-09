@@ -1,5 +1,6 @@
 package io.kestra.plugin.ceph.rbd.snapshots;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.http.client.HttpClientException;
 import io.kestra.core.runners.RunContext;
@@ -27,7 +28,7 @@ final class SnapshotSupport {
         if (raw == null) {
             return List.of();
         }
-        return CephClient.MAPPER.convertValue(raw, new com.fasterxml.jackson.core.type.TypeReference<List<SnapshotInfo>>() {
+        return CephClient.MAPPER.convertValue(raw, new TypeReference<List<SnapshotInfo>>() {
         });
     }
 
@@ -35,9 +36,8 @@ final class SnapshotSupport {
      * Looks up a just-created snapshot by name, retrying for up to
      * {@link CephSession#DEFAULT_RETRY_ATTEMPTS} tries: the parent image already exists so its GET
      * never 404s, but Ceph's task manager can process the snapshot creation asynchronously, so the
-     * new entry can briefly be missing from the {@code snapshots} array. Falls back to a minimal
-     * {@link SnapshotInfo} once attempts are exhausted, preserving the previous behaviour for a
-     * snapshot that genuinely never appears.
+     * new entry can briefly be missing from the {@code snapshots} array. Throws once attempts are
+     * exhausted rather than fabricating a placeholder result for a snapshot that never appeared.
      */
     static SnapshotInfo findWithRetry(CephSession session, RunContext runContext, String imageSpec, String snapshotName)
         throws IOException, IllegalVariableEvaluationException, HttpClientException {
@@ -49,8 +49,12 @@ final class SnapshotSupport {
                 .filter(snapshot -> snapshotName.equals(snapshot.name()))
                 .findFirst();
 
-            if (found.isPresent() || attempt == attempts) {
-                return found.orElse(new SnapshotInfo(null, snapshotName, null, null, null));
+            if (found.isPresent()) {
+                return found.get();
+            }
+
+            if (attempt == attempts) {
+                break;
             }
 
             runContext.logger().debug(
@@ -60,7 +64,9 @@ final class SnapshotSupport {
             sleep(delayMillis);
         }
 
-        return new SnapshotInfo(null, snapshotName, null, null, null);
+        throw new IllegalStateException(
+            "Snapshot '" + snapshotName + "' did not appear on image '" + imageSpec + "' after " + attempts + " attempts (~" + (attempts * delayMillis) + "ms) waiting for asynchronous creation."
+        );
     }
 
     private static void sleep(long delayMillis) {

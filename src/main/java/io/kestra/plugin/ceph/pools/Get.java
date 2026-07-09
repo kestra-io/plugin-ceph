@@ -1,5 +1,6 @@
 package io.kestra.plugin.ceph.pools;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -60,7 +61,7 @@ public class Get extends AbstractCephConnection implements RunnableTask<PoolInfo
         var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
 
         logger.info("Fetching Ceph pool '{}'", rPoolName);
-        return session.get("/pool/" + CephClient.pathSegment(rPoolName), new com.fasterxml.jackson.core.type.TypeReference<PoolInfo>() {
+        return session.get("/pool/" + CephClient.pathSegment(rPoolName), new TypeReference<PoolInfo>() {
         });
     }
 }

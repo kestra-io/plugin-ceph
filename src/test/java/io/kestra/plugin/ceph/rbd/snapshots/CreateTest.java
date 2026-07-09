@@ -19,6 +19,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 class CreateTest {
@@ -61,5 +62,22 @@ class CreateTest {
 
         wireMock.verify(postRequestedFor(urlEqualTo("/api/block/image/rbd%2Fdata-volume/snap"))
             .withRequestBody(equalToJson("{\"snapshot_name\": \"before-migration\", \"mirrorImageSnapshot\": false}")));
+    }
+
+    @Test
+    void snapshotNeverAppears_throwsAfterRetriesExhausted() {
+        wireMock.stubFor(post(urlEqualTo("/api/block/image/rbd%2Fdata-volume/snap")).willReturn(noContent()));
+        wireMock.stubFor(get(urlEqualTo("/api/block/image/rbd%2Fdata-volume"))
+            .willReturn(okJson("""
+                {"name": "data-volume", "pool_name": "rbd", "snapshots": []}
+                """)));
+
+        var task = CephWireMock.withConnection(Create.builder().id("createSnapMissing" + System.nanoTime()).type(Create.class.getName()), wireMock.httpsPort())
+            .poolName(Property.ofValue("rbd"))
+            .imageName(Property.ofValue("data-volume"))
+            .snapshotName(Property.ofValue("before-migration"))
+            .build();
+
+        assertThrows(IllegalStateException.class, () -> task.run(runContextFactory.of()));
     }
 }

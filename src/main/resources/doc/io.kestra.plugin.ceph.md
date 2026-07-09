@@ -29,7 +29,7 @@ Both return `status` (`HEALTH_OK`, `HEALTH_WARN`, or `HEALTH_ERR`), a `summary` 
 
 `pools.List`, `pools.Get`, `pools.Create`, `pools.Update`, and `pools.Delete` manage Ceph storage pools over `/api/pool`. `Create` requires `poolName`; `poolType` (`REPLICATED` or `ERASURE`), `pgNum`, and `size` have sensible defaults. `Update` sends only the fields explicitly set (`size`, `pgNum`, `applicationMetadata`). `Delete` treats an already-absent pool as successfully deleted rather than an error.
 
-Some Ceph versions create pools asynchronously via the Dashboard task manager; `Create` and `Update` issue the request and immediately fetch the resulting pool, which may briefly reflect an in-progress state.
+Some Ceph versions process pool creation and updates asynchronously via the Dashboard task manager; `Create` and `Update` retry the follow-up fetch of the resulting pool for up to ~10 seconds instead of failing on a transient 404.
 
 ### RBD images (`rbd`)
 

@@ -1,5 +1,6 @@
 package io.kestra.plugin.ceph.rbd.snapshots;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -109,7 +110,7 @@ public class Clone extends AbstractCephConnection implements RunnableTask<RbdIma
         session.post("/block/image/" + spec + "/snap/" + CephClient.pathSegment(rSnapshotName) + "/clone", body, null);
 
         var childSpec = CephClient.imageSpec(rChildPoolName, rChildImageName);
-        return session.getWithRetry("/block/image/" + childSpec, new com.fasterxml.jackson.core.type.TypeReference<RbdImageInfo>() {
+        return session.getWithRetry("/block/image/" + childSpec, new TypeReference<RbdImageInfo>() {
         }).withPoolName(rChildPoolName);
     }
 }

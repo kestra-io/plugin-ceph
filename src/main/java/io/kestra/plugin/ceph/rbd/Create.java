@@ -1,5 +1,6 @@
 package io.kestra.plugin.ceph.rbd;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -92,7 +93,7 @@ public class Create extends AbstractCephConnection implements RunnableTask<RbdIm
         session.post("/block/image", body, null);
 
         var spec = CephClient.imageSpec(rPoolName, rImageName);
-        return session.getWithRetry("/block/image/" + spec, new com.fasterxml.jackson.core.type.TypeReference<RbdImageInfo>() {
+        return session.getWithRetry("/block/image/" + spec, new TypeReference<RbdImageInfo>() {
         }).withPoolName(rPoolName);
     }
 }

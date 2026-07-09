@@ -13,12 +13,14 @@ import org.junit.jupiter.api.Test;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.noContent;
+import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 class CreateTest {
@@ -61,5 +63,20 @@ class CreateTest {
             .withRequestBody(equalToJson("""
                 {"pool": "archive", "pool_type": "replicated", "pg_num": 32, "size": 3}
                 """)));
+    }
+
+    @Test
+    void poolNeverAppears_throwsAfterRetriesExhausted() {
+        wireMock.stubFor(post(urlEqualTo("/api/pool")).willReturn(noContent()));
+        wireMock.stubFor(get(urlEqualTo("/api/pool/archive")).willReturn(notFound()));
+
+        var task = CephWireMock.withConnection(Create.builder().id("createPoolMissing" + System.nanoTime()).type(Create.class.getName()), wireMock.httpsPort())
+            .poolName(Property.ofValue("archive"))
+            .poolType(Property.ofValue(Create.PoolType.REPLICATED))
+            .pgNum(Property.ofValue(32))
+            .size(Property.ofValue(3))
+            .build();
+
+        assertThrows(IllegalStateException.class, () -> task.run(runContextFactory.of()));
     }
 }

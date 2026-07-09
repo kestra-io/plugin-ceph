@@ -1,5 +1,6 @@
 package io.kestra.plugin.ceph.pools;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -126,7 +127,7 @@ public class Create extends AbstractCephConnection implements RunnableTask<PoolI
         logger.info("Creating Ceph pool '{}' (type={}, pgNum={})", rPoolName, rPoolType, rPgNum);
         session.post("/pool", body, null);
 
-        return session.getWithRetry("/pool/" + CephClient.pathSegment(rPoolName), new com.fasterxml.jackson.core.type.TypeReference<PoolInfo>() {
+        return session.getWithRetry("/pool/" + CephClient.pathSegment(rPoolName), new TypeReference<PoolInfo>() {
         });
     }
 

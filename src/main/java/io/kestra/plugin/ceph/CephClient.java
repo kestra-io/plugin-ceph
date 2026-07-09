@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Shared HTTP execution layer for the Ceph Dashboard REST API. Centralised here so both tasks
@@ -192,7 +193,7 @@ public final class CephClient {
         if (body == null) {
             return null;
         }
-        var matcher = java.util.regex.Pattern.compile("endpoint is '([0-9]+\\.[0-9]+)'").matcher(body);
+        var matcher = Pattern.compile("endpoint is '([0-9]+\\.[0-9]+)'").matcher(body);
         return matcher.find() ? matcher.group(1) : null;
     }
 
