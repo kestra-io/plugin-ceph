@@ -32,19 +32,24 @@ head -6 /tmp/ceph-status.log
 
 echo "Configuring the Ceph Dashboard..."
 docker exec "${CEPH_CONTAINER}" ceph mgr module enable dashboard --force
+# The demo image marks the module enabled but the running mgr does not always activate it (its CLI
+# commands stay unregistered, so 'ceph dashboard ...' returns EINVAL invalid command). Fail the
+# active mgr once to force a clean restart that loads all enabled modules.
+docker exec "${CEPH_CONTAINER}" ceph mgr fail || true
 
-# Force-enabling registers the module but the mgr needs a few seconds to actually load it before
-# the 'mgr/dashboard/*' config options and the 'ceph dashboard' commands are recognized. Poll a
-# harmless dashboard command until it succeeds, which means the module is live.
+# Poll a harmless dashboard command until it succeeds, which means the module is actually live and
+# its commands are registered.
 echo "Waiting for the dashboard module to load..."
-timeout=120
+timeout=180
 elapsed=0
 until docker exec "${CEPH_CONTAINER}" ceph dashboard create-self-signed-cert >/tmp/ceph-dash.log 2>&1; do
     if [ "${elapsed}" -ge "${timeout}" ]; then
         echo "Dashboard module did not load within ${timeout}s. Last error:" >&2
         cat /tmp/ceph-dash.log >&2 || true
+        echo "--- ceph mgr module ls ---" >&2
         docker exec "${CEPH_CONTAINER}" ceph mgr module ls || true
-        docker exec "${CEPH_CONTAINER}" ceph -s || true
+        echo "--- container log tail (mgr module load errors) ---" >&2
+        docker logs --tail 100 "${CEPH_CONTAINER}" 2>&1 | grep -iE 'dashboard|mgr|module|import|error' | tail -40 || true
         exit 1
     fi
     sleep 5
