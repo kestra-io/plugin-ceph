@@ -17,9 +17,8 @@ import static org.hamcrest.Matchers.is;
 
 /**
  * Pool lifecycle against a live Ceph cluster (see {@code .github/setup-unit.sh}). Skipped unless
- * {@code CEPH_IT=true}. Uses {@code size=1} throughout since the demo cluster runs a single OSD,
- * so a replicated pool with the default size of 3 would never leave {@code HEALTH_WARN}
- * (undersized PGs).
+ * {@code CEPH_IT=true}. Uses {@code size=2} with min_size 1 (set in the bootstrap) so the pool is active and
+ * writable on the single-OSD demo cluster; the Dashboard rejects an explicit size of 1.
  */
 @KestraTest
 @EnabledIfEnvironmentVariable(named = "CEPH_IT", matches = "true")
@@ -37,7 +36,7 @@ class PoolsIT {
             .poolName(Property.ofValue(poolName))
             .poolType(Property.ofValue(Create.PoolType.REPLICATED))
             .pgNum(Property.ofValue(8))
-            .size(Property.ofValue(1))
+            .size(Property.ofValue(2))
             .build()
             .run(runContext);
         assertThat(created.poolName(), is(poolName));
@@ -48,7 +47,7 @@ class PoolsIT {
                 .build()
                 .run(runContext);
             assertThat(get.poolName(), is(poolName));
-            assertThat(get.size(), is(1));
+            assertThat(get.size(), is(2));
 
             CephIT.withConnection(Update.builder().id("poolsItUpdate" + System.nanoTime()).type(Update.class.getName()))
                 .poolName(Property.ofValue(poolName))

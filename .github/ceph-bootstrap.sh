@@ -79,10 +79,6 @@ ceph-osd -i "$OSD_ID" --mkfs --osd-uuid "$OSD_UUID" --setuser ceph --setgroup ce
 ceph-osd -i "$OSD_ID" --setuser ceph --setgroup ceph
 sleep 5
 
-# This single-OSD cluster uses size-1 pools; the mon rejects explicitly configuring pool size 1
-# unless this is enabled, which the Dashboard pool-create API surfaces as an HTTP 400.
-ceph config set global mon_allow_pool_size_one true
-
 # dashboard (base image has a working cherrypy, unlike the demo image)
 ceph mgr module enable dashboard
 ceph config set mgr mgr/dashboard/server_addr 0.0.0.0
@@ -102,6 +98,16 @@ ceph auth get-or-create "client.rgw.$RGW_NAME" mon 'allow rw' osd 'allow rwx' mg
 chown -R ceph:ceph "/var/lib/ceph/radosgw"
 radosgw -n "client.rgw.$RGW_NAME" --setuser ceph --setgroup ceph
 sleep 5
+
+# Give the dashboard a system RGW user so all bucket/user admin ops work, including bucket delete
+# (which needs write caps the auto-provisioned dashboard user does not have).
+radosgw-admin user create --uid=dashboard --display-name="dashboard admin" --system \
+  --access-key=dashboardaccesskey --secret-key=dashboardsecretkey >/dev/null 2>&1 || true
+printf '%s' "dashboardaccesskey" > /tmp/rgw-ak
+printf '%s' "dashboardsecretkey" > /tmp/rgw-sk
+ceph dashboard set-rgw-api-access-key -i /tmp/rgw-ak
+ceph dashboard set-rgw-api-secret-key -i /tmp/rgw-sk
+rm -f /tmp/rgw-ak /tmp/rgw-sk
 
 echo "===== STATUS ====="
 ceph -s

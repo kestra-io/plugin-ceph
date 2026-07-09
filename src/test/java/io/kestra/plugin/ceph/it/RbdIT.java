@@ -49,7 +49,7 @@ class RbdIT {
             .poolName(Property.ofValue(poolName))
             .poolType(Property.ofValue(io.kestra.plugin.ceph.pools.Create.PoolType.REPLICATED))
             .pgNum(Property.ofValue(8))
-            .size(Property.ofValue(1))
+            .size(Property.ofValue(2))
             .applicationMetadata(Property.ofValue(java.util.List.of("rbd")))
             .build()
             .run(runContext);
