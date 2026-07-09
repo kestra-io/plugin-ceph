@@ -79,6 +79,10 @@ ceph-osd -i "$OSD_ID" --mkfs --osd-uuid "$OSD_UUID" --setuser ceph --setgroup ce
 ceph-osd -i "$OSD_ID" --setuser ceph --setgroup ceph
 sleep 5
 
+# This single-OSD cluster uses size-1 pools; the mon rejects explicitly configuring pool size 1
+# unless this is enabled, which the Dashboard pool-create API surfaces as an HTTP 400.
+ceph config set global mon_allow_pool_size_one true
+
 # dashboard (base image has a working cherrypy, unlike the demo image)
 ceph mgr module enable dashboard
 ceph config set mgr mgr/dashboard/server_addr 0.0.0.0
