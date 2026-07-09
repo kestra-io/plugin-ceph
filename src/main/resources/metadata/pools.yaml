@@ -1,0 +1,8 @@
+group: io.kestra.plugin.ceph.pools
+name: "pools"
+title: "Ceph Pools"
+description: "Tasks that manage Ceph storage pools."
+body: "List, get, create, update, and delete Ceph storage pools, including replication and placement group settings."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

@@ -1,0 +1,8 @@
+group: io.kestra.plugin.ceph.cluster
+name: "cluster"
+title: "Ceph Cluster Health"
+description: "Tasks and triggers that report on overall Ceph cluster health."
+body: "Fetch the full or minimal Ceph health report, and trigger a flow the moment the cluster transitions into a degraded (HEALTH_WARN or HEALTH_ERR) state."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

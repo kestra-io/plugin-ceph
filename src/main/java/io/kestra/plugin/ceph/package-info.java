@@ -1,7 +1,7 @@
 @PluginSubGroup(
     title = "Ceph",
     description = "Ceph plugin for Kestra",
-    categories = PluginSubGroup.PluginCategory.DATA
+    categories = PluginSubGroup.PluginCategory.INFRASTRUCTURE
 )
 package io.kestra.plugin.ceph;
 

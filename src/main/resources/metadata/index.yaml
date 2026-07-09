@@ -1,8 +1,8 @@
 group: io.kestra.plugin.ceph
 name: "ceph"
 title: "Ceph"
-description: "Ceph plugin for Kestra"
-body: ""
+description: "Manage Ceph clusters through the Ceph Dashboard REST API: cluster health, pools, RBD images and snapshots, and the Object Gateway (RGW)."
+body: "Authenticate against the Ceph Dashboard, monitor cluster health (including a trigger for degraded state), and manage storage pools, RBD block images and snapshots, and RGW buckets and users."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"

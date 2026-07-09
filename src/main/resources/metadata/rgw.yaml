@@ -1,0 +1,8 @@
+group: io.kestra.plugin.ceph.rgw
+name: "rgw"
+title: "Ceph Object Gateway (RGW)"
+description: "Tasks that manage RGW buckets and users."
+body: "List and create Object Gateway buckets and users, and delete buckets."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
