@@ -9,7 +9,7 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.ceph.AbstractCephConnection;
 import io.kestra.plugin.ceph.CephClient;
-import io.kestra.plugin.ceph.rbd.RbdImageInfo;
+import io.kestra.plugin.ceph.rbd.images.RbdImageInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;

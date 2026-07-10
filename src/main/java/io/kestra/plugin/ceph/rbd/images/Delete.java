@@ -1,4 +1,4 @@
-package io.kestra.plugin.ceph.rbd;
+package io.kestra.plugin.ceph.rbd.images;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -37,7 +37,7 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: delete_image
-                    type: io.kestra.plugin.ceph.rbd.Delete
+                    type: io.kestra.plugin.ceph.rbd.images.Delete
                     host: "ceph-mgr.internal"
                     username: "admin"
                     password: "{{ secret('CEPH_DASHBOARD_PASSWORD') }}"

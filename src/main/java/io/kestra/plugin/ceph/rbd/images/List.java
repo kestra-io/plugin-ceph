@@ -1,5 +1,7 @@
-package io.kestra.plugin.ceph.rbd;
+package io.kestra.plugin.ceph.rbd.images;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -42,7 +44,7 @@ import java.net.URI;
 
                 tasks:
                   - id: images
-                    type: io.kestra.plugin.ceph.rbd.List
+                    type: io.kestra.plugin.ceph.rbd.images.List
                     host: "ceph-mgr.internal"
                     username: "admin"
                     password: "{{ secret('CEPH_DASHBOARD_PASSWORD') }}"
@@ -114,5 +116,16 @@ public class List extends AbstractCephConnection implements RunnableTask<List.Ou
             description = "Storage URI of the Ion-serialized images. Set only when `fetchType` is `STORE`."
         )
         private final URI uri;
+    }
+
+    /**
+     * {@code GET /api/block/image} groups images by pool: one entry per pool, each carrying the list
+     * of images in it. This mirrors that shape so the task can flatten it into a single list.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record PoolImageGroup(
+        @JsonProperty("pool_name") String poolName,
+        java.util.List<RbdImageInfo> value
+    ) {
     }
 }

@@ -49,7 +49,7 @@
 - Authenticates with a `username`/`password` pair, or a pre-obtained JWT `token` for one-off tasks (Ceph's default 8h TTL is not auto-renewed, so use `username`/`password` in triggers or scheduled flows).
 - `cluster`: `GetHealth`, `GetStatus`, and the `HealthTrigger` trigger.
 - `pools`: `List`, `Get`, `Create`, `Update`, `Delete`.
-- `rbd`: `List`, `Create`, `Delete`.
+- `rbd.images`: `List`, `Create`, `Delete`.
 - `rbd.snapshots`: `Create`, `List`, `Delete`, `Rollback`, `Clone`.
 - `rgw`: `ListBuckets`, `CreateBucket`, `DeleteBucket`, `ListUsers`, `CreateUser`.
 

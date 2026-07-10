@@ -31,9 +31,9 @@ Both return `status` (`HEALTH_OK`, `HEALTH_WARN`, or `HEALTH_ERR`), a `summary` 
 
 Some Ceph versions process pool creation and updates asynchronously via the Dashboard task manager; `Create` and `Update` retry the follow-up fetch of the resulting pool for up to ~10 seconds instead of failing on a transient 404.
 
-### RBD images (`rbd`)
+### RBD images (`rbd.images`)
 
-`rbd.List`, `rbd.Create`, and `rbd.Delete` manage RBD block images over `/api/block/image`. Images are identified by `poolName` + `imageName`; internally this plugin builds the composite `image_spec` (`{pool}/{image}`, percent-encoded) the API expects, so you never need to build it yourself.
+`rbd.images.List`, `rbd.images.Create`, and `rbd.images.Delete` manage RBD block images over `/api/block/image`. Images are identified by `poolName` + `imageName`; internally this plugin builds the composite `image_spec` (`{pool}/{image}`, percent-encoded) the API expects, so you never need to build it yourself.
 
 ### RBD snapshots (`rbd.snapshots`)
 

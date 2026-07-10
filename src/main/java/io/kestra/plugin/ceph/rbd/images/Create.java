@@ -1,4 +1,4 @@
-package io.kestra.plugin.ceph.rbd;
+package io.kestra.plugin.ceph.rbd.images;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.kestra.core.models.annotations.Example;
@@ -46,7 +46,7 @@ import java.util.Map;
 
                 tasks:
                   - id: create_image
-                    type: io.kestra.plugin.ceph.rbd.Create
+                    type: io.kestra.plugin.ceph.rbd.images.Create
                     host: "ceph-mgr.internal"
                     username: "admin"
                     password: "{{ secret('CEPH_DASHBOARD_PASSWORD') }}"

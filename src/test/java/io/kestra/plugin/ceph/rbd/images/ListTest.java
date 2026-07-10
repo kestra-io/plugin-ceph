@@ -1,4 +1,4 @@
-package io.kestra.plugin.ceph.rbd;
+package io.kestra.plugin.ceph.rbd.images;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import io.kestra.core.junit.annotations.KestraTest;

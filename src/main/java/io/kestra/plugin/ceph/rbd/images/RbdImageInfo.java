@@ -1,4 +1,4 @@
-package io.kestra.plugin.ceph.rbd;
+package io.kestra.plugin.ceph.rbd.images;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

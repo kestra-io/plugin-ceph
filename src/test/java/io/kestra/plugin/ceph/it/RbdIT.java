@@ -3,9 +3,9 @@ package io.kestra.plugin.ceph.it;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.plugin.ceph.rbd.Create;
-import io.kestra.plugin.ceph.rbd.Delete;
-import io.kestra.plugin.ceph.rbd.List;
+import io.kestra.plugin.ceph.rbd.images.Create;
+import io.kestra.plugin.ceph.rbd.images.Delete;
+import io.kestra.plugin.ceph.rbd.images.List;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -19,9 +19,9 @@ import static org.hamcrest.Matchers.is;
  * Skipped unless {@code CEPH_IT=true}. Self-provisions a dedicated pool tagged for the {@code rbd}
  * application, since Ceph expects RBD images to live in a pool with that application enabled.
  *
- * <p>Class names collide across {@code io.kestra.plugin.ceph.rbd} and
+ * <p>Class names collide across {@code io.kestra.plugin.ceph.rbd.images} and
  * {@code io.kestra.plugin.ceph.rbd.snapshots} (both have {@code Create}, {@code Delete},
- * {@code List}); the image-level tasks are imported directly and the snapshot-level and pool-level
+ * {@code List}): the image-level tasks are imported directly and the snapshot-level and pool-level
  * tasks are referenced by fully qualified name to resolve the conflict.
  */
 @KestraTest

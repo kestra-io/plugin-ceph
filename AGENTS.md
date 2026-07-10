@@ -5,7 +5,7 @@
 - Provides plugin components under `io.kestra.plugin.ceph`, talking to the Ceph Manager Dashboard REST API (`https://{host}:{port}/api/`).
 - `cluster`: `GetHealth`, `GetStatus`, and the `HealthTrigger` polling trigger.
 - `pools`: `List`, `Get`, `Create`, `Update`, `Delete`.
-- `rbd`: `List`, `Create`, `Delete`.
+- `rbd.images`: `List`, `Create`, `Delete`.
 - `rbd.snapshots`: `Create`, `List`, `Delete`, `Rollback`, `Clone`.
 - `rgw`: `ListBuckets`, `CreateBucket`, `DeleteBucket`, `ListUsers`, `CreateUser`.
 
@@ -24,7 +24,7 @@ Single-module plugin. Source packages under `io.kestra.plugin.ceph`:
 - `ceph` — `AbstractCephConnection` (shared connection properties + JWT auth), `CephClient` (shared HTTP execution/error handling, used by both tasks and the trigger), `CephSession` (per-execution authenticated session).
 - `ceph.cluster` — cluster health tasks and the degraded-health trigger.
 - `ceph.pools` — pool CRUD tasks.
-- `ceph.rbd` — RBD block image tasks.
+- `ceph.rbd.images` — RBD block image tasks.
 - `ceph.rbd.snapshots` — RBD snapshot tasks.
 - `ceph.rgw` — Object Gateway bucket and user tasks.
 
@@ -46,6 +46,7 @@ plugin-ceph/
 │   ├── cluster/
 │   ├── pools/
 │   ├── rbd/
+│   │   ├── images/
 │   │   └── snapshots/
 │   └── rgw/
 ├── src/test/java/io/kestra/plugin/ceph/  (WireMock-based unit tests, mirroring src/main structure)

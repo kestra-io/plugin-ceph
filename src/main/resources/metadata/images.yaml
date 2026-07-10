@@ -1,5 +1,5 @@
-group: io.kestra.plugin.ceph.rbd
-name: "rbd"
+group: io.kestra.plugin.ceph.rbd.images
+name: "images"
 title: "Ceph RBD Images"
 description: "Tasks that manage RBD block images."
 body: "List, create, and delete RBD block images within a Ceph pool."
