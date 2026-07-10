@@ -30,8 +30,8 @@ class ClusterIT {
             .build()
             .run(runContextFactory.of());
 
-        assertThat(output.getStatus(), anyOf(is("HEALTH_OK"), is("HEALTH_WARN"), is("HEALTH_ERR")));
-        assertThat(output.getSummary(), notNullValue());
+        assertThat(output.status(), anyOf(is("HEALTH_OK"), is("HEALTH_WARN"), is("HEALTH_ERR")));
+        assertThat(output.summary(), notNullValue());
     }
 
     @Test
@@ -40,6 +40,6 @@ class ClusterIT {
             .build()
             .run(runContextFactory.of());
 
-        assertThat(output.getStatus(), anyOf(is("HEALTH_OK"), is("HEALTH_WARN"), is("HEALTH_ERR")));
+        assertThat(output.status(), anyOf(is("HEALTH_OK"), is("HEALTH_WARN"), is("HEALTH_ERR")));
     }
 }

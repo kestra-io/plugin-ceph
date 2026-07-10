@@ -7,14 +7,12 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.ceph.AbstractCephConnection;
 import io.kestra.plugin.ceph.CephClient;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import java.util.List;
 import java.util.Map;
 
 @SuperBuilder
@@ -45,10 +43,10 @@ import java.util.Map;
         )
     }
 )
-public class GetHealth extends AbstractCephConnection implements RunnableTask<GetHealth.Output> {
+public class GetHealth extends AbstractCephConnection implements RunnableTask<HealthOutput> {
 
     @Override
-    public Output run(RunContext runContext) throws Exception {
+    public HealthOutput run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
         try (var session = connect(runContext)) {
             logger.info("Fetching full Ceph cluster health report");
@@ -57,34 +55,7 @@ public class GetHealth extends AbstractCephConnection implements RunnableTask<Ge
 
             logger.info("Ceph cluster health status: {}", health.status());
 
-            return Output.builder()
-                .status(health.status())
-                .summary(health.summary())
-                .checks(health.checks())
-                .build();
+            return HealthOutput.from(health);
         }
-    }
-
-    @Builder
-    @Getter
-    public static class Output implements io.kestra.core.models.tasks.Output {
-
-        @Schema(
-            title = "Cluster status",
-            description = "Overall Ceph cluster status: `HEALTH_OK`, `HEALTH_WARN`, or `HEALTH_ERR`."
-        )
-        private final String status;
-
-        @Schema(
-            title = "Summary",
-            description = "Human-readable messages derived from each active health check."
-        )
-        private final List<String> summary;
-
-        @Schema(
-            title = "Checks",
-            description = "Raw per-check details as returned by the Ceph Dashboard API; a list of check objects."
-        )
-        private final Object checks;
     }
 }

@@ -92,6 +92,10 @@ public class CreateUser extends AbstractCephConnection implements RunnableTask<U
             }
 
             logger.info("Creating RGW user '{}'", rUid);
+            // RGW user creation returns the full user synchronously in the POST body, unlike pool,
+            // image, and bucket creation which the Dashboard task manager may process asynchronously.
+            // Some Ceph versions still return an empty body, so fall back to fetching the user, with
+            // the same retry the sibling Create tasks use for the async-creation 404 window.
             var created = session.post("/rgw/user", body, new TypeReference<UserInfo>() {
             });
 

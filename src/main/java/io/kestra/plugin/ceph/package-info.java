@@ -1,6 +1,6 @@
 @PluginSubGroup(
     title = "Ceph",
-    description = "Ceph plugin for Kestra",
+    description = "Manage Ceph clusters through the Manager Dashboard REST API: cluster health, pools, RBD images and snapshots, and the Object Gateway.",
     categories = PluginSubGroup.PluginCategory.INFRASTRUCTURE
 )
 package io.kestra.plugin.ceph;

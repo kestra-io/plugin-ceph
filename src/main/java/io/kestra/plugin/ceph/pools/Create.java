@@ -73,7 +73,7 @@ public class Create extends AbstractCephConnection implements RunnableTask<PoolI
 
     @Schema(
         title = "Pool type",
-        description = "Replication strategy. Defaults to `REPLICATED`."
+        description = "Replication strategy: `REPLICATED` or `ERASURE`. Defaults to `REPLICATED`."
     )
     @NotNull
     @Builder.Default

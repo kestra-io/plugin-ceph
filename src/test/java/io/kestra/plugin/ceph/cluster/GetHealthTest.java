@@ -2,6 +2,7 @@ package io.kestra.plugin.ceph.cluster;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.ceph.CephWireMock;
 import jakarta.inject.Inject;
@@ -66,10 +67,10 @@ class GetHealthTest {
 
         var output = task.run(runContextFactory.of());
 
-        assertThat(output.getStatus(), is("HEALTH_WARN"));
-        assertThat(output.getSummary(), hasSize(1));
-        assertThat(output.getSummary(), contains("MON_DISK_LOW: mon a is low on available space"));
-        assertThat(output.getChecks(), instanceOf(java.util.List.class));
+        assertThat(output.status(), is("HEALTH_WARN"));
+        assertThat(output.summary(), hasSize(1));
+        assertThat(output.summary(), contains("MON_DISK_LOW: mon a is low on available space"));
+        assertThat(output.checks(), instanceOf(java.util.List.class));
     }
 
     @Test
@@ -78,7 +79,7 @@ class GetHealthTest {
 
         var secret = "s3cr3t-do-not-leak";
         var task = CephWireMock.withConnection(GetHealth.builder().id("getHealthAuthFail" + System.nanoTime()).type(GetHealth.class.getName()), wireMock.httpsPort())
-            .password(io.kestra.core.models.property.Property.ofValue(secret))
+            .password(Property.ofValue(secret))
             .build();
 
         var ex = assertThrows(IllegalStateException.class, () -> task.run(runContextFactory.of()));
@@ -99,7 +100,7 @@ class GetHealthTest {
 
         var output = task.run(runContextFactory.of());
 
-        assertThat(output.getStatus(), is("HEALTH_OK"));
+        assertThat(output.status(), is("HEALTH_OK"));
         CephWireMock.verifyAuthHeader(wireMock, "/api/health/full", token);
         CephWireMock.verifyNoAuthCall(wireMock);
     }
@@ -109,9 +110,9 @@ class GetHealthTest {
         var task = GetHealth.builder()
             .id("getHealthNoAuth" + System.nanoTime())
             .type(GetHealth.class.getName())
-            .host(io.kestra.core.models.property.Property.ofValue("localhost"))
-            .port(io.kestra.core.models.property.Property.ofValue(wireMock.httpsPort()))
-            .skipSsl(io.kestra.core.models.property.Property.ofValue(true))
+            .host(Property.ofValue("localhost"))
+            .port(Property.ofValue(wireMock.httpsPort()))
+            .skipSsl(Property.ofValue(true))
             .build();
 
         var ex = assertThrows(IllegalArgumentException.class, () -> task.run(runContextFactory.of()));

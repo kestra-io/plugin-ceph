@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @SuperBuilder
@@ -93,7 +94,7 @@ public class Create extends AbstractCephConnection implements RunnableTask<Snaps
             logger.info("Creating snapshot '{}' of RBD image '{}/{}'", rSnapshotName, rPoolName, rImageName);
             // The reef snap-create endpoint expects both fields; omitting mirrorImageSnapshot triggers a
             // server-side TypeError (HTTP 500), so send it explicitly as false for a plain snapshot.
-            Map<String, Object> body = new java.util.LinkedHashMap<>();
+            Map<String, Object> body = new LinkedHashMap<>();
             body.put("snapshot_name", rSnapshotName);
             body.put("mirrorImageSnapshot", false);
             session.post("/block/image/" + spec + "/snap", body, null);

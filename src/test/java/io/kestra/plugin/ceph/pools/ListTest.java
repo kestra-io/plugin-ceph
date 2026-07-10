@@ -12,6 +12,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
@@ -105,7 +108,7 @@ class ListTest {
         assertThat(output.getUri(), is(notNullValue()));
 
         var stored = FileSerde.readAll(
-                new java.io.InputStreamReader(runContext.storage().getFile(output.getUri()), java.nio.charset.StandardCharsets.UTF_8),
+                new InputStreamReader(runContext.storage().getFile(output.getUri()), StandardCharsets.UTF_8),
                 PoolInfo.class)
             .collectList()
             .block();

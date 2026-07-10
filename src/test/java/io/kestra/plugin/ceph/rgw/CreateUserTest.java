@@ -10,7 +10,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
@@ -58,5 +60,25 @@ class CreateUserTest {
             .withRequestBody(equalToJson("""
                 {"uid": "svc-backups", "display_name": "Backup service account", "email": "backups@company.team"}
                 """)));
+    }
+
+    @Test
+    void emptyPostBody_fallsBackToFetchingTheUser() throws Exception {
+        wireMock.stubFor(post(urlEqualTo("/api/rgw/user"))
+            .willReturn(aResponse().withStatus(201)));
+        wireMock.stubFor(get(urlEqualTo("/api/rgw/user/svc-backups"))
+            .willReturn(okJson("""
+                {"user_id": "svc-backups", "display_name": "Backup service account", "email": "backups@company.team"}
+                """)));
+
+        var task = CephWireMock.withConnection(CreateUser.builder().id("createUser" + System.nanoTime()).type(CreateUser.class.getName()), wireMock.httpsPort())
+            .uid(Property.ofValue("svc-backups"))
+            .displayName(Property.ofValue("Backup service account"))
+            .build();
+
+        var output = task.run(runContextFactory.of());
+
+        assertThat(output.userId(), is("svc-backups"));
+        assertThat(output.displayName(), is("Backup service account"));
     }
 }

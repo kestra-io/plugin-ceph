@@ -26,7 +26,6 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -76,7 +75,7 @@ import java.util.Optional;
         )
     }
 )
-public class HealthTrigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<HealthTrigger.Output> {
+public class HealthTrigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<HealthOutput> {
 
     private static final String STATE_KEY_PREFIX = "ceph-cluster-health-";
 
@@ -186,36 +185,9 @@ public class HealthTrigger extends AbstractTrigger implements PollingTriggerInte
 
             logger.info("Ceph cluster health degraded: status={}", health.status());
 
-            var output = Output.builder()
-                .status(health.status())
-                .summary(health.summary())
-                .checks(health.checks())
-                .build();
+            var output = HealthOutput.from(health);
 
             return Optional.of(TriggerService.generateExecution(this, conditionContext, context, output));
         }
-    }
-
-    @Builder
-    @Getter
-    public static class Output implements io.kestra.core.models.tasks.Output {
-
-        @Schema(
-            title = "Cluster status",
-            description = "The degraded status that triggered this execution: `HEALTH_WARN` or `HEALTH_ERR`."
-        )
-        private final String status;
-
-        @Schema(
-            title = "Summary",
-            description = "Human-readable messages derived from each active health check."
-        )
-        private final List<String> summary;
-
-        @Schema(
-            title = "Checks",
-            description = "Raw per-check details as returned by the Ceph Dashboard API; a list of check objects."
-        )
-        private final Object checks;
     }
 }

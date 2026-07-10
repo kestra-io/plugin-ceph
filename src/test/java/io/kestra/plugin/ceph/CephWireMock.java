@@ -4,8 +4,10 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import io.kestra.core.models.property.Property;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
@@ -37,7 +39,7 @@ public final class CephWireMock {
 
     public static void stubAuthFailure(WireMockServer server, int status) {
         server.stubFor(post(urlEqualTo("/api/auth"))
-            .willReturn(com.github.tomakehurst.wiremock.client.WireMock.aResponse().withStatus(status)));
+            .willReturn(aResponse().withStatus(status)));
     }
 
     /**
@@ -55,13 +57,13 @@ public final class CephWireMock {
     }
 
     public static void verifyAuthHeader(WireMockServer server, String path) {
-        server.verify(com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor(urlEqualTo(path))
+        server.verify(getRequestedFor(urlEqualTo(path))
             .withHeader("Authorization", equalTo("Bearer " + DEFAULT_TOKEN))
             .withHeader("Accept", equalTo("application/vnd.ceph.api.v1.0+json")));
     }
 
     public static void verifyAuthHeader(WireMockServer server, String path, String token) {
-        server.verify(com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor(urlEqualTo(path))
+        server.verify(getRequestedFor(urlEqualTo(path))
             .withHeader("Authorization", equalTo("Bearer " + token))
             .withHeader("Accept", equalTo("application/vnd.ceph.api.v1.0+json")));
     }
