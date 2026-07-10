@@ -74,22 +74,22 @@ public class Create extends AbstractCephConnection implements RunnableTask<Snaps
     @Override
     public SnapshotInfo run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
+            var rImageName = runContext.render(imageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("imageName is required"));
+            var rSnapshotName = runContext.render(snapshotName).as(String.class).orElseThrow(() -> new IllegalArgumentException("snapshotName is required"));
 
-        var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
-        var rImageName = runContext.render(imageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("imageName is required"));
-        var rSnapshotName = runContext.render(snapshotName).as(String.class).orElseThrow(() -> new IllegalArgumentException("snapshotName is required"));
+            var spec = CephClient.imageSpec(rPoolName, rImageName);
 
-        var spec = CephClient.imageSpec(rPoolName, rImageName);
+            logger.info("Creating snapshot '{}' of RBD image '{}/{}'", rSnapshotName, rPoolName, rImageName);
+            // The reef snap-create endpoint expects both fields; omitting mirrorImageSnapshot triggers a
+            // server-side TypeError (HTTP 500), so send it explicitly as false for a plain snapshot.
+            Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("snapshot_name", rSnapshotName);
+            body.put("mirrorImageSnapshot", false);
+            session.post("/block/image/" + spec + "/snap", body, null);
 
-        logger.info("Creating snapshot '{}' of RBD image '{}/{}'", rSnapshotName, rPoolName, rImageName);
-        // The reef snap-create endpoint expects both fields; omitting mirrorImageSnapshot triggers a
-        // server-side TypeError (HTTP 500), so send it explicitly as false for a plain snapshot.
-        Map<String, Object> body = new java.util.LinkedHashMap<>();
-        body.put("snapshot_name", rSnapshotName);
-        body.put("mirrorImageSnapshot", false);
-        session.post("/block/image/" + spec + "/snap", body, null);
-
-        return SnapshotSupport.findWithRetry(session, runContext, spec, rSnapshotName);
+            return SnapshotSupport.findWithRetry(session, runContext, spec, rSnapshotName);
+        }
     }
 }

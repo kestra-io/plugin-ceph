@@ -65,18 +65,18 @@ public class List extends AbstractCephConnection implements RunnableTask<List.Ou
     @Override
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
+            var rImageName = runContext.render(imageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("imageName is required"));
 
-        var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
-        var rImageName = runContext.render(imageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("imageName is required"));
+            logger.info("Listing snapshots of RBD image '{}/{}'", rPoolName, rImageName);
+            var snapshots = SnapshotSupport.fetchSnapshots(session, CephClient.imageSpec(rPoolName, rImageName));
 
-        logger.info("Listing snapshots of RBD image '{}/{}'", rPoolName, rImageName);
-        var snapshots = SnapshotSupport.fetchSnapshots(session, CephClient.imageSpec(rPoolName, rImageName));
-
-        return Output.builder()
-            .total(snapshots.size())
-            .snapshots(snapshots)
-            .build();
+            return Output.builder()
+                .total(snapshots.size())
+                .snapshots(snapshots)
+                .build();
+        }
     }
 
     @Builder

@@ -89,28 +89,28 @@ public class Clone extends AbstractCephConnection implements RunnableTask<RbdIma
     @Override
     public RbdImageInfo run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
+            var rImageName = runContext.render(imageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("imageName is required"));
+            var rSnapshotName = runContext.render(snapshotName).as(String.class).orElseThrow(() -> new IllegalArgumentException("snapshotName is required"));
+            var rChildPoolName = runContext.render(childPoolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("childPoolName is required"));
+            var rChildImageName = runContext.render(childImageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("childImageName is required"));
 
-        var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
-        var rImageName = runContext.render(imageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("imageName is required"));
-        var rSnapshotName = runContext.render(snapshotName).as(String.class).orElseThrow(() -> new IllegalArgumentException("snapshotName is required"));
-        var rChildPoolName = runContext.render(childPoolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("childPoolName is required"));
-        var rChildImageName = runContext.render(childImageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("childImageName is required"));
+            var spec = CephClient.imageSpec(rPoolName, rImageName);
 
-        var spec = CephClient.imageSpec(rPoolName, rImageName);
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("child_pool_name", rChildPoolName);
+            body.put("child_image_name", rChildImageName);
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("child_pool_name", rChildPoolName);
-        body.put("child_image_name", rChildImageName);
+            logger.info(
+                "Cloning snapshot '{}' of RBD image '{}/{}' into '{}/{}'",
+                rSnapshotName, rPoolName, rImageName, rChildPoolName, rChildImageName
+            );
+            session.post("/block/image/" + spec + "/snap/" + CephClient.pathSegment(rSnapshotName) + "/clone", body, null);
 
-        logger.info(
-            "Cloning snapshot '{}' of RBD image '{}/{}' into '{}/{}'",
-            rSnapshotName, rPoolName, rImageName, rChildPoolName, rChildImageName
-        );
-        session.post("/block/image/" + spec + "/snap/" + CephClient.pathSegment(rSnapshotName) + "/clone", body, null);
-
-        var childSpec = CephClient.imageSpec(rChildPoolName, rChildImageName);
-        return session.getWithRetry("/block/image/" + childSpec, new TypeReference<RbdImageInfo>() {
-        }).withPoolName(rChildPoolName);
+            var childSpec = CephClient.imageSpec(rChildPoolName, rChildImageName);
+            return session.getWithRetry("/block/image/" + childSpec, new TypeReference<RbdImageInfo>() {
+            }).withPoolName(rChildPoolName);
+        }
     }
 }

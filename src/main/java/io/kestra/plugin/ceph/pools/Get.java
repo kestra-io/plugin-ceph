@@ -56,12 +56,12 @@ public class Get extends AbstractCephConnection implements RunnableTask<PoolInfo
     @Override
     public PoolInfo run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
 
-        var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
-
-        logger.info("Fetching Ceph pool '{}'", rPoolName);
-        return session.get("/pool/" + CephClient.pathSegment(rPoolName), new TypeReference<PoolInfo>() {
-        });
+            logger.info("Fetching Ceph pool '{}'", rPoolName);
+            return session.get("/pool/" + CephClient.pathSegment(rPoolName), new TypeReference<PoolInfo>() {
+            });
+        }
     }
 }

@@ -55,23 +55,23 @@ public class List extends AbstractCephConnection implements RunnableTask<List.Ou
     @Override
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            var rPoolName = poolName != null ? runContext.render(poolName).as(String.class).orElse(null) : null;
+            var path = rPoolName != null ? "/block/image?pool_name=" + CephClient.pathSegment(rPoolName) : "/block/image";
 
-        var rPoolName = poolName != null ? runContext.render(poolName).as(String.class).orElse(null) : null;
-        var path = rPoolName != null ? "/block/image?pool_name=" + CephClient.pathSegment(rPoolName) : "/block/image";
+            logger.info("Listing RBD images{}", rPoolName != null ? " in pool '" + rPoolName + "'" : "");
+            java.util.List<PoolImageGroup> groups = session.get(path, new TypeReference<>() {
+            });
 
-        logger.info("Listing RBD images{}", rPoolName != null ? " in pool '" + rPoolName + "'" : "");
-        java.util.List<PoolImageGroup> groups = session.get(path, new TypeReference<>() {
-        });
+            var images = groups.stream()
+                .flatMap(group -> group.value().stream().map(image -> image.withPoolName(group.poolName())))
+                .toList();
 
-        var images = groups.stream()
-            .flatMap(group -> group.value().stream().map(image -> image.withPoolName(group.poolName())))
-            .toList();
-
-        return Output.builder()
-            .total(images.size())
-            .images(images)
-            .build();
+            return Output.builder()
+                .total(images.size())
+                .images(images)
+                .build();
+        }
     }
 
     @Builder

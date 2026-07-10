@@ -56,17 +56,17 @@ public class DeleteBucket extends AbstractCephConnection implements RunnableTask
     @Override
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            var rBucketName = runContext.render(bucketName).as(String.class).orElseThrow(() -> new IllegalArgumentException("bucketName is required"));
 
-        var rBucketName = runContext.render(bucketName).as(String.class).orElseThrow(() -> new IllegalArgumentException("bucketName is required"));
+            logger.info("Deleting RGW bucket '{}'", rBucketName);
+            var deleted = session.delete("/rgw/bucket/" + CephClient.pathSegment(rBucketName));
 
-        logger.info("Deleting RGW bucket '{}'", rBucketName);
-        var deleted = session.delete("/rgw/bucket/" + CephClient.pathSegment(rBucketName));
-
-        return Output.builder()
-            .deleted(deleted)
-            .message(deleted ? "Bucket '" + rBucketName + "' deleted." : "Bucket '" + rBucketName + "' did not exist.")
-            .build();
+            return Output.builder()
+                .deleted(deleted)
+                .message(deleted ? "Bucket '" + rBucketName + "' deleted." : "Bucket '" + rBucketName + "' did not exist.")
+                .build();
+        }
     }
 
     @Builder

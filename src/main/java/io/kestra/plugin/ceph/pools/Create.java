@@ -105,30 +105,30 @@ public class Create extends AbstractCephConnection implements RunnableTask<PoolI
     @Override
     public PoolInfo run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
+            var rPoolType = runContext.render(poolType).as(PoolType.class).orElse(PoolType.REPLICATED);
+            var rPgNum = runContext.render(pgNum).as(Integer.class).orElse(32);
+            var rSize = runContext.render(size).as(Integer.class).orElse(3);
+            var rApplicationMetadata = applicationMetadata != null ? runContext.render(applicationMetadata).asList(String.class) : List.<String>of();
 
-        var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
-        var rPoolType = runContext.render(poolType).as(PoolType.class).orElse(PoolType.REPLICATED);
-        var rPgNum = runContext.render(pgNum).as(Integer.class).orElse(32);
-        var rSize = runContext.render(size).as(Integer.class).orElse(3);
-        var rApplicationMetadata = applicationMetadata != null ? runContext.render(applicationMetadata).asList(String.class) : List.<String>of();
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("pool", rPoolName);
+            body.put("pool_type", rPoolType.name().toLowerCase());
+            body.put("pg_num", rPgNum);
+            if (rPoolType == PoolType.REPLICATED) {
+                body.put("size", rSize);
+            }
+            if (!rApplicationMetadata.isEmpty()) {
+                body.put("application_metadata", rApplicationMetadata);
+            }
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("pool", rPoolName);
-        body.put("pool_type", rPoolType.name().toLowerCase());
-        body.put("pg_num", rPgNum);
-        if (rPoolType == PoolType.REPLICATED) {
-            body.put("size", rSize);
+            logger.info("Creating Ceph pool '{}' (type={}, pgNum={})", rPoolName, rPoolType, rPgNum);
+            session.post("/pool", body, null);
+
+            return session.getWithRetry("/pool/" + CephClient.pathSegment(rPoolName), new TypeReference<PoolInfo>() {
+            });
         }
-        if (!rApplicationMetadata.isEmpty()) {
-            body.put("application_metadata", rApplicationMetadata);
-        }
-
-        logger.info("Creating Ceph pool '{}' (type={}, pgNum={})", rPoolName, rPoolType, rPgNum);
-        session.post("/pool", body, null);
-
-        return session.getWithRetry("/pool/" + CephClient.pathSegment(rPoolName), new TypeReference<PoolInfo>() {
-        });
     }
 
     public enum PoolType {

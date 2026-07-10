@@ -70,26 +70,26 @@ public class CreateUser extends AbstractCephConnection implements RunnableTask<U
     @Override
     public UserInfo run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            var rUid = runContext.render(uid).as(String.class).orElseThrow(() -> new IllegalArgumentException("uid is required"));
+            var rDisplayName = runContext.render(displayName).as(String.class).orElseThrow(() -> new IllegalArgumentException("displayName is required"));
+            var rEmail = email != null ? runContext.render(email).as(String.class).orElse(null) : null;
 
-        var rUid = runContext.render(uid).as(String.class).orElseThrow(() -> new IllegalArgumentException("uid is required"));
-        var rDisplayName = runContext.render(displayName).as(String.class).orElseThrow(() -> new IllegalArgumentException("displayName is required"));
-        var rEmail = email != null ? runContext.render(email).as(String.class).orElse(null) : null;
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("uid", rUid);
+            body.put("display_name", rDisplayName);
+            if (rEmail != null) {
+                body.put("email", rEmail);
+            }
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("uid", rUid);
-        body.put("display_name", rDisplayName);
-        if (rEmail != null) {
-            body.put("email", rEmail);
-        }
-
-        logger.info("Creating RGW user '{}'", rUid);
-        var created = session.post("/rgw/user", body, new TypeReference<UserInfo>() {
-        });
-
-        return created != null
-            ? created
-            : session.get("/rgw/user/" + CephClient.pathSegment(rUid), new TypeReference<UserInfo>() {
+            logger.info("Creating RGW user '{}'", rUid);
+            var created = session.post("/rgw/user", body, new TypeReference<UserInfo>() {
             });
+
+            return created != null
+                ? created
+                : session.get("/rgw/user/" + CephClient.pathSegment(rUid), new TypeReference<UserInfo>() {
+                });
+        }
     }
 }

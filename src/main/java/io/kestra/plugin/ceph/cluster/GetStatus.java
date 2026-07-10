@@ -50,19 +50,19 @@ public class GetStatus extends AbstractCephConnection implements RunnableTask<Ge
     @Override
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            logger.info("Fetching Ceph cluster health status");
+            Map<String, Object> raw = session.get("/health/minimal", CephClient.MAP_TYPE);
+            var health = CephClient.parseHealth(raw);
 
-        logger.info("Fetching Ceph cluster health status");
-        Map<String, Object> raw = session.get("/health/minimal", CephClient.MAP_TYPE);
-        var health = CephClient.parseHealth(raw);
+            logger.info("Ceph cluster health status: {}", health.status());
 
-        logger.info("Ceph cluster health status: {}", health.status());
-
-        return Output.builder()
-            .status(health.status())
-            .summary(health.summary())
-            .checks(health.checks())
-            .build();
+            return Output.builder()
+                .status(health.status())
+                .summary(health.summary())
+                .checks(health.checks())
+                .build();
+        }
     }
 
     @Builder

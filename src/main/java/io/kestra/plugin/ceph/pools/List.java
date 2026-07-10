@@ -47,16 +47,16 @@ public class List extends AbstractCephConnection implements RunnableTask<List.Ou
     @Override
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            logger.info("Listing Ceph pools");
+            java.util.List<PoolInfo> pools = session.get("/pool", new TypeReference<>() {
+            });
 
-        logger.info("Listing Ceph pools");
-        java.util.List<PoolInfo> pools = session.get("/pool", new TypeReference<>() {
-        });
-
-        return Output.builder()
-            .total(pools.size())
-            .pools(pools)
-            .build();
+            return Output.builder()
+                .total(pools.size())
+                .pools(pools)
+                .build();
+        }
     }
 
     @Builder

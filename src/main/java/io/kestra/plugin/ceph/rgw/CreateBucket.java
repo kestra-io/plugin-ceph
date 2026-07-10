@@ -70,19 +70,19 @@ public class CreateBucket extends AbstractCephConnection implements RunnableTask
     @Override
     public BucketInfo run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            var rBucketName = runContext.render(bucketName).as(String.class).orElseThrow(() -> new IllegalArgumentException("bucketName is required"));
+            var rOwner = runContext.render(owner).as(String.class).orElseThrow(() -> new IllegalArgumentException("owner is required"));
 
-        var rBucketName = runContext.render(bucketName).as(String.class).orElseThrow(() -> new IllegalArgumentException("bucketName is required"));
-        var rOwner = runContext.render(owner).as(String.class).orElseThrow(() -> new IllegalArgumentException("owner is required"));
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("bucket", rBucketName);
+            body.put("uid", rOwner);
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("bucket", rBucketName);
-        body.put("uid", rOwner);
+            logger.info("Creating RGW bucket '{}' owned by '{}'", rBucketName, rOwner);
+            session.post("/rgw/bucket", body, null);
 
-        logger.info("Creating RGW bucket '{}' owned by '{}'", rBucketName, rOwner);
-        session.post("/rgw/bucket", body, null);
-
-        return session.getWithRetry("/rgw/bucket/" + CephClient.pathSegment(rBucketName), new TypeReference<BucketInfo>() {
-        });
+            return session.getWithRetry("/rgw/bucket/" + CephClient.pathSegment(rBucketName), new TypeReference<BucketInfo>() {
+            });
+        }
     }
 }

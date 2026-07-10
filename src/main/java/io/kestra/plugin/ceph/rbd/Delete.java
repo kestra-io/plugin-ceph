@@ -62,20 +62,20 @@ public class Delete extends AbstractCephConnection implements RunnableTask<Delet
     @Override
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
+            var rImageName = runContext.render(imageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("imageName is required"));
 
-        var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
-        var rImageName = runContext.render(imageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("imageName is required"));
+            logger.info("Deleting RBD image '{}/{}'", rPoolName, rImageName);
+            var deleted = session.delete("/block/image/" + CephClient.imageSpec(rPoolName, rImageName));
 
-        logger.info("Deleting RBD image '{}/{}'", rPoolName, rImageName);
-        var deleted = session.delete("/block/image/" + CephClient.imageSpec(rPoolName, rImageName));
-
-        return Output.builder()
-            .deleted(deleted)
-            .message(deleted
-                ? "Image '" + rPoolName + "/" + rImageName + "' deleted."
-                : "Image '" + rPoolName + "/" + rImageName + "' did not exist.")
-            .build();
+            return Output.builder()
+                .deleted(deleted)
+                .message(deleted
+                    ? "Image '" + rPoolName + "/" + rImageName + "' deleted."
+                    : "Image '" + rPoolName + "/" + rImageName + "' did not exist.")
+                .build();
+        }
     }
 
     @Builder

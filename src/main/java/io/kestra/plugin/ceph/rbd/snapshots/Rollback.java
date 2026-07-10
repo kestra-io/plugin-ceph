@@ -68,20 +68,20 @@ public class Rollback extends AbstractCephConnection implements RunnableTask<Rol
     @Override
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
+            var rImageName = runContext.render(imageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("imageName is required"));
+            var rSnapshotName = runContext.render(snapshotName).as(String.class).orElseThrow(() -> new IllegalArgumentException("snapshotName is required"));
 
-        var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
-        var rImageName = runContext.render(imageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("imageName is required"));
-        var rSnapshotName = runContext.render(snapshotName).as(String.class).orElseThrow(() -> new IllegalArgumentException("snapshotName is required"));
+            var spec = CephClient.imageSpec(rPoolName, rImageName);
 
-        var spec = CephClient.imageSpec(rPoolName, rImageName);
+            logger.info("Rolling back RBD image '{}/{}' to snapshot '{}'", rPoolName, rImageName, rSnapshotName);
+            session.post("/block/image/" + spec + "/snap/" + CephClient.pathSegment(rSnapshotName) + "/rollback", null, null);
 
-        logger.info("Rolling back RBD image '{}/{}' to snapshot '{}'", rPoolName, rImageName, rSnapshotName);
-        session.post("/block/image/" + spec + "/snap/" + CephClient.pathSegment(rSnapshotName) + "/rollback", null, null);
-
-        return Output.builder()
-            .message("Image '" + rPoolName + "/" + rImageName + "' rolled back to snapshot '" + rSnapshotName + "'.")
-            .build();
+            return Output.builder()
+                .message("Image '" + rPoolName + "/" + rImageName + "' rolled back to snapshot '" + rSnapshotName + "'.")
+                .build();
+        }
     }
 
     @Builder

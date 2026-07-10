@@ -78,22 +78,22 @@ public class Create extends AbstractCephConnection implements RunnableTask<RbdIm
     @Override
     public RbdImageInfo run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
+            var rImageName = runContext.render(imageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("imageName is required"));
+            var rSize = runContext.render(size).as(Long.class).orElseThrow(() -> new IllegalArgumentException("size is required"));
 
-        var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
-        var rImageName = runContext.render(imageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("imageName is required"));
-        var rSize = runContext.render(size).as(Long.class).orElseThrow(() -> new IllegalArgumentException("size is required"));
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("pool_name", rPoolName);
+            body.put("name", rImageName);
+            body.put("size", rSize);
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("pool_name", rPoolName);
-        body.put("name", rImageName);
-        body.put("size", rSize);
+            logger.info("Creating RBD image '{}/{}' ({} bytes)", rPoolName, rImageName, rSize);
+            session.post("/block/image", body, null);
 
-        logger.info("Creating RBD image '{}/{}' ({} bytes)", rPoolName, rImageName, rSize);
-        session.post("/block/image", body, null);
-
-        var spec = CephClient.imageSpec(rPoolName, rImageName);
-        return session.getWithRetry("/block/image/" + spec, new TypeReference<RbdImageInfo>() {
-        }).withPoolName(rPoolName);
+            var spec = CephClient.imageSpec(rPoolName, rImageName);
+            return session.getWithRetry("/block/image/" + spec, new TypeReference<RbdImageInfo>() {
+            }).withPoolName(rPoolName);
+        }
     }
 }

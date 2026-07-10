@@ -49,16 +49,16 @@ public class ListUsers extends AbstractCephConnection implements RunnableTask<Li
     @Override
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            logger.info("Listing RGW users");
+            List<String> users = session.get("/rgw/user", new TypeReference<>() {
+            });
 
-        logger.info("Listing RGW users");
-        List<String> users = session.get("/rgw/user", new TypeReference<>() {
-        });
-
-        return Output.builder()
-            .total(users.size())
-            .users(users)
-            .build();
+            return Output.builder()
+                .total(users.size())
+                .users(users)
+                .build();
+        }
     }
 
     @Builder

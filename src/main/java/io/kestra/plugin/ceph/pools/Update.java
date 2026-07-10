@@ -84,33 +84,33 @@ public class Update extends AbstractCephConnection implements RunnableTask<PoolI
     @Override
     public PoolInfo run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
 
-        var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
-
-        Map<String, Object> body = new LinkedHashMap<>();
-        if (size != null) {
-            runContext.render(size).as(Integer.class).ifPresent(v -> body.put("size", v));
-        }
-        if (pgNum != null) {
-            runContext.render(pgNum).as(Integer.class).ifPresent(v -> body.put("pg_num", v));
-        }
-        if (applicationMetadata != null) {
-            var rApplicationMetadata = runContext.render(applicationMetadata).asList(String.class);
-            if (!rApplicationMetadata.isEmpty()) {
-                body.put("application_metadata", rApplicationMetadata);
+            Map<String, Object> body = new LinkedHashMap<>();
+            if (size != null) {
+                runContext.render(size).as(Integer.class).ifPresent(v -> body.put("size", v));
             }
+            if (pgNum != null) {
+                runContext.render(pgNum).as(Integer.class).ifPresent(v -> body.put("pg_num", v));
+            }
+            if (applicationMetadata != null) {
+                var rApplicationMetadata = runContext.render(applicationMetadata).asList(String.class);
+                if (!rApplicationMetadata.isEmpty()) {
+                    body.put("application_metadata", rApplicationMetadata);
+                }
+            }
+
+            if (body.isEmpty()) {
+                throw new IllegalArgumentException("At least one of size, pgNum, or applicationMetadata must be set to update a pool.");
+            }
+
+            logger.info("Updating Ceph pool '{}' with {}", rPoolName, body.keySet());
+            var pathSegment = CephClient.pathSegment(rPoolName);
+            session.put("/pool/" + pathSegment, body, null);
+
+            return session.getWithRetry("/pool/" + pathSegment, new TypeReference<PoolInfo>() {
+            });
         }
-
-        if (body.isEmpty()) {
-            throw new IllegalArgumentException("At least one of size, pgNum, or applicationMetadata must be set to update a pool.");
-        }
-
-        logger.info("Updating Ceph pool '{}' with {}", rPoolName, body.keySet());
-        var pathSegment = CephClient.pathSegment(rPoolName);
-        session.put("/pool/" + pathSegment, body, null);
-
-        return session.getWithRetry("/pool/" + pathSegment, new TypeReference<PoolInfo>() {
-        });
     }
 }

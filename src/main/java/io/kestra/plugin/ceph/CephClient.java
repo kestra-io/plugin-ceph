@@ -51,35 +51,58 @@ public final class CephClient {
      * username/password. When {@code token} is present it is used as-is (no call to
      * {@code POST /api/auth}); otherwise {@code username}/{@code password} are exchanged for a
      * JWT via {@code POST /api/auth}. The token is never logged.
+     *
+     * <p>A single {@link HttpClient} is created here and reused for every request issued through
+     * the returned {@link CephSession} (including the initial auth call), instead of opening a new
+     * TLS connection per request. If session construction fails after the client was created, the
+     * client is closed here so it is never leaked.
      */
     public static CephSession connect(
         RunContext runContext, String host, int port, String username, String password, String token, boolean skipSsl
     ) throws IOException, IllegalVariableEvaluationException, HttpClientException {
         var url = baseUrl(host, port);
+        var client = newHttpClient(runContext, skipSsl);
 
-        if (token != null && !token.isBlank()) {
-            return new CephSession(runContext, url, token, skipSsl);
-        }
+        try {
+            if (token != null && !token.isBlank()) {
+                return new CephSession(runContext, client, url, token);
+            }
 
-        if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("Ceph authentication requires either 'token' or 'password'.");
-        }
-        if (username == null || username.isBlank()) {
-            throw new IllegalArgumentException("username is required when authenticating with 'password'.");
-        }
+            if (password == null || password.isBlank()) {
+                throw new IllegalArgumentException("Ceph authentication requires either 'token' or 'password'.");
+            }
+            if (username == null || username.isBlank()) {
+                throw new IllegalArgumentException("username is required when authenticating with 'password'.");
+            }
 
-        var resolvedToken = authenticate(runContext, url, username, password, skipSsl);
-        return new CephSession(runContext, url, resolvedToken, skipSsl);
+            var resolvedToken = authenticate(client, url, username, password);
+            return new CephSession(runContext, client, url, resolvedToken);
+        } catch (Exception e) {
+            try {
+                client.close();
+            } catch (IOException closeException) {
+                e.addSuppressed(closeException);
+            }
+            throw e;
+        }
     }
 
-    private static String authenticate(RunContext runContext, String baseUrl, String username, String password, boolean skipSsl)
+    private static HttpClient newHttpClient(RunContext runContext, boolean skipSsl) throws IllegalVariableEvaluationException {
+        var config = HttpConfiguration.builder()
+            .allowFailed(Property.ofValue(true))
+            .ssl(SslOptions.builder().insecureTrustAllCertificates(Property.ofValue(skipSsl)).build())
+            .build();
+
+        return new HttpClient(runContext, config);
+    }
+
+    private static String authenticate(HttpClient client, String baseUrl, String username, String password)
         throws IOException, IllegalVariableEvaluationException, HttpClientException {
         var response = execute(
-            runContext,
+            client,
             "POST",
             baseUrl + "/auth",
             null,
-            skipSsl,
             Map.of("username", username, "password", password),
             false
         );
@@ -96,23 +119,23 @@ public final class CephClient {
     }
 
     /**
-     * Executes a single Ceph Dashboard API request, applying the required Accept header and
-     * bearer token, and surfacing non-2xx responses as a clear, actionable exception.
+     * Executes a single Ceph Dashboard API request over the given (already-connected) {@code client},
+     * applying the required Accept header and bearer token, and surfacing non-2xx responses as a
+     * clear, actionable exception.
      *
      * @param allowNotFound when {@code true}, an HTTP 404 response is returned to the caller
      *                      instead of being thrown, so callers such as delete operations can
      *                      distinguish "resource did not exist" from a hard failure.
      */
     static HttpResponse<String> execute(
-        RunContext runContext,
+        HttpClient client,
         String method,
         String uri,
         String token,
-        boolean skipSsl,
         Object body,
         boolean allowNotFound
     ) throws IOException, IllegalVariableEvaluationException, HttpClientException {
-        var response = send(runContext, method, uri, token, skipSsl, body, API_VERSION_HEADER);
+        var response = send(client, method, uri, token, body, API_VERSION_HEADER);
         var status = response.getStatus() != null ? response.getStatus().getCode() : 0;
 
         // The Ceph API is versioned per endpoint: some endpoints require a newer version than the
@@ -121,7 +144,7 @@ public final class CephClient {
         if (status == 415) {
             var required = parseRequiredVersion(response.getBody());
             if (required != null) {
-                response = send(runContext, method, uri, token, skipSsl, body,
+                response = send(client, method, uri, token, body,
                     "application/vnd.ceph.api.v" + required + "+json");
                 status = response.getStatus() != null ? response.getStatus().getCode() : 0;
             }
@@ -147,16 +170,16 @@ public final class CephClient {
     }
 
     /**
-     * Sends a single request with the given Accept version header. allowFailed=true so non-2xx
-     * responses are returned normally (with the body parsed as String) rather than thrown as an
-     * HttpClientResponseException whose wrapped body type is not guaranteed to match.
+     * Sends a single request with the given Accept version header over the shared {@code client}.
+     * The client's {@code allowFailed=true} configuration (set once in {@link #newHttpClient}) means
+     * non-2xx responses are returned normally (with the body parsed as String) rather than thrown as
+     * an HttpClientResponseException whose wrapped body type is not guaranteed to match.
      */
     private static HttpResponse<String> send(
-        RunContext runContext,
+        HttpClient client,
         String method,
         String uri,
         String token,
-        boolean skipSsl,
         Object body,
         String acceptHeader
     ) throws IOException, IllegalVariableEvaluationException, HttpClientException {
@@ -175,14 +198,7 @@ public final class CephClient {
                 .body(HttpRequest.JsonRequestBody.builder().content(body).build());
         }
 
-        var config = HttpConfiguration.builder()
-            .allowFailed(Property.ofValue(true))
-            .ssl(SslOptions.builder().insecureTrustAllCertificates(Property.ofValue(skipSsl)).build())
-            .build();
-
-        try (var client = new HttpClient(runContext, config)) {
-            return client.request(requestBuilder.build(), String.class);
-        }
+        return client.request(requestBuilder.build(), String.class);
     }
 
     /**

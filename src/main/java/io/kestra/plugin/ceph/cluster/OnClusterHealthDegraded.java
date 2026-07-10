@@ -161,37 +161,37 @@ public class OnClusterHealthDegraded extends AbstractTrigger implements PollingT
         var rToken = runContext.render(token).as(String.class).orElse(null);
         var rSkipSsl = runContext.render(skipSsl).as(Boolean.class).orElse(false);
 
-        var session = CephClient.connect(runContext, rHost, rPort, rUsername, rPassword, rToken, rSkipSsl);
+        try (var session = CephClient.connect(runContext, rHost, rPort, rUsername, rPassword, rToken, rSkipSsl)) {
+            Map<String, Object> raw = session.get("/health/minimal", CephClient.MAP_TYPE);
+            var health = CephClient.parseHealth(raw);
 
-        Map<String, Object> raw = session.get("/health/minimal", CephClient.MAP_TYPE);
-        var health = CephClient.parseHealth(raw);
+            // Key includes flowId and triggerId so multiple flows/triggers polling different clusters don't clobber each other's state.
+            var kvKey = STATE_KEY_PREFIX + context.getFlowId() + "-" + context.getTriggerId();
+            var kv = runContext.namespaceKv(context.getNamespace());
 
-        // Key includes flowId and triggerId so multiple flows/triggers polling different clusters don't clobber each other's state.
-        var kvKey = STATE_KEY_PREFIX + context.getFlowId() + "-" + context.getTriggerId();
-        var kv = runContext.namespaceKv(context.getNamespace());
+            var lastStatus = kv.getValue(kvKey).map(value -> String.valueOf(value.value())).orElse(null);
+            var currentlyDegraded = CephClient.isDegraded(health.status());
+            var previouslyDegraded = CephClient.isDegraded(lastStatus);
 
-        var lastStatus = kv.getValue(kvKey).map(value -> String.valueOf(value.value())).orElse(null);
-        var currentlyDegraded = CephClient.isDegraded(health.status());
-        var previouslyDegraded = CephClient.isDegraded(lastStatus);
+            // Refreshed every poll while the trigger is active, so a 10x-interval TTL never expires a
+            // live status but ages out an orphaned entry a few polls after the trigger stops.
+            kv.put(kvKey, new KVValueAndMetadata(new KVMetadata(null, interval.multipliedBy(10)), health.status()));
 
-        // Refreshed every poll while the trigger is active, so a 10x-interval TTL never expires a
-        // live status but ages out an orphaned entry a few polls after the trigger stops.
-        kv.put(kvKey, new KVValueAndMetadata(new KVMetadata(null, interval.multipliedBy(10)), health.status()));
+            if (!currentlyDegraded || previouslyDegraded) {
+                logger.debug("Ceph cluster health status={} (previous={}), not firing", health.status(), lastStatus);
+                return Optional.empty();
+            }
 
-        if (!currentlyDegraded || previouslyDegraded) {
-            logger.debug("Ceph cluster health status={} (previous={}), not firing", health.status(), lastStatus);
-            return Optional.empty();
+            logger.info("Ceph cluster health degraded: status={}", health.status());
+
+            var output = Output.builder()
+                .status(health.status())
+                .summary(health.summary())
+                .checks(health.checks())
+                .build();
+
+            return Optional.of(TriggerService.generateExecution(this, conditionContext, context, output));
         }
-
-        logger.info("Ceph cluster health degraded: status={}", health.status());
-
-        var output = Output.builder()
-            .status(health.status())
-            .summary(health.summary())
-            .checks(health.checks())
-            .build();
-
-        return Optional.of(TriggerService.generateExecution(this, conditionContext, context, output));
     }
 
     @Builder

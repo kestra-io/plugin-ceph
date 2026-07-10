@@ -49,16 +49,16 @@ public class ListBuckets extends AbstractCephConnection implements RunnableTask<
     @Override
     public Output run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
-        var session = connect(runContext);
+        try (var session = connect(runContext)) {
+            logger.info("Listing RGW buckets");
+            List<String> buckets = session.get("/rgw/bucket", new TypeReference<>() {
+            });
 
-        logger.info("Listing RGW buckets");
-        List<String> buckets = session.get("/rgw/bucket", new TypeReference<>() {
-        });
-
-        return Output.builder()
-            .total(buckets.size())
-            .buckets(buckets)
-            .build();
+            return Output.builder()
+                .total(buckets.size())
+                .buckets(buckets)
+                .build();
+        }
     }
 
     @Builder
