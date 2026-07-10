@@ -22,6 +22,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @SuperBuilder
@@ -116,7 +117,7 @@ public class Create extends AbstractCephConnection implements RunnableTask<PoolI
 
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("pool", rPoolName);
-            body.put("pool_type", rPoolType.name().toLowerCase());
+            body.put("pool_type", rPoolType.name().toLowerCase(Locale.ROOT));
             body.put("pg_num", rPgNum);
             if (rPoolType == PoolType.REPLICATED) {
                 body.put("size", rSize);

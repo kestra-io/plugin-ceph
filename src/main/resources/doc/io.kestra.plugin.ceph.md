@@ -41,7 +41,7 @@ Some Ceph versions process pool creation and updates asynchronously via the Dash
 
 ### Object Gateway (`rgw`)
 
-`rgw.ListBuckets`, `rgw.CreateBucket`, `rgw.DeleteBucket`, `rgw.ListUsers`, and `rgw.CreateUser` manage RGW buckets and users over `/api/rgw/bucket` and `/api/rgw/user`. Every bucket must have an `owner` (an existing RGW user's `uid`). `DeleteBucket` deletes the bucket via `DELETE /api/rgw/bucket/{bucket}` and does not take a purge option.
+`rgw.ListBuckets`, `rgw.CreateBucket`, `rgw.DeleteBucket`, `rgw.ListUsers`, and `rgw.CreateUser` manage RGW buckets and users over `/api/rgw/bucket` and `/api/rgw/user`. Every bucket must have an `owner` (an existing RGW user's `uid`). `DeleteBucket` deletes the bucket via `DELETE /api/rgw/bucket/{bucket}` and does not take a purge option. `CreateUser` returns the generated S3 `keys`; the `secretKey` is encrypted in the outputs and only ever returned at creation time, so capture it then.
 
 ## Triggers
 

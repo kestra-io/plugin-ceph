@@ -35,7 +35,7 @@ public final class CephFetch {
                 onStore.accept(store(runContext, items));
             }
             case FETCH_ONE -> {
-                onFetch.accept(items.isEmpty() ? List.of() : List.of(items.get(0)));
+                onFetch.accept(items.isEmpty() ? List.of() : List.of(items.getFirst()));
                 onStore.accept(null);
             }
             case NONE -> {

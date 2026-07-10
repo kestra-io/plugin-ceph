@@ -18,7 +18,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
 class CreateUserTest {
@@ -42,7 +45,8 @@ class CreateUserTest {
     void happyPath() throws Exception {
         wireMock.stubFor(post(urlEqualTo("/api/rgw/user"))
             .willReturn(okJson("""
-                {"user_id": "svc-backups", "display_name": "Backup service account", "email": "backups@company.team"}
+                {"user_id": "svc-backups", "display_name": "Backup service account", "email": "backups@company.team",
+                 "keys": [{"user": "svc-backups", "access_key": "AK-123", "secret_key": "SK-456"}]}
                 """)));
 
         var task = CephWireMock.withConnection(CreateUser.builder().id("createUser" + System.nanoTime()).type(CreateUser.class.getName()), wireMock.httpsPort())
@@ -55,6 +59,12 @@ class CreateUserTest {
 
         assertThat(output.userId(), is("svc-backups"));
         assertThat(output.displayName(), is("Backup service account"));
+        assertThat(output.keys(), hasSize(1));
+        assertThat(output.keys().getFirst().accessKey(), is("AK-123"));
+        // The secret key is returned as an EncryptedString: present, and encrypted (not the plaintext).
+        var secretKey = output.keys().getFirst().secretKey();
+        assertThat(secretKey, notNullValue());
+        assertThat(secretKey.getValue(), not(is("SK-456")));
 
         wireMock.verify(postRequestedFor(urlEqualTo("/api/rgw/user"))
             .withRequestBody(equalToJson("""

@@ -10,6 +10,7 @@ import io.kestra.core.http.client.HttpClient;
 import io.kestra.core.http.client.HttpClientException;
 import io.kestra.core.http.client.configurations.HttpConfiguration;
 import io.kestra.core.http.client.configurations.SslOptions;
+import io.kestra.core.http.client.configurations.TimeoutConfiguration;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -91,8 +93,14 @@ public final class CephClient {
     }
 
     private static HttpClient newHttpClient(RunContext runContext, boolean skipSsl) throws IllegalVariableEvaluationException {
+        // Explicit timeouts so an unreachable or hung dashboard fails the task in seconds rather
+        // than blocking on the JDK default (which can stall a task or poll for minutes).
         var config = HttpConfiguration.builder()
             .allowFailed(Property.ofValue(true))
+            .timeout(TimeoutConfiguration.builder()
+                .connectTimeout(Property.ofValue(Duration.ofSeconds(10)))
+                .readIdleTimeout(Property.ofValue(Duration.ofSeconds(60)))
+                .build())
             .ssl(SslOptions.builder().insecureTrustAllCertificates(Property.ofValue(skipSsl)).build())
             .build();
 

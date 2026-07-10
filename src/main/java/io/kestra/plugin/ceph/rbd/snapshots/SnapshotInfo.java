@@ -30,7 +30,9 @@ public record SnapshotInfo(
 
     @Schema(
         title = "Timestamp",
-        description = "Timestamp of when the snapshot was created, as returned by Ceph."
+        description = "When the snapshot was created, kept as the raw string the Ceph Dashboard API " +
+            "returns (e.g. `Wed Jan 10 12:00:00 2026`). The exact format is Ceph-version dependent, so " +
+            "it is not parsed into a typed instant here."
     )
     String timestamp,
 
