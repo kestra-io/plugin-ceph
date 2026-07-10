@@ -53,17 +53,26 @@ import java.util.Map;
 )
 public class CreateUser extends AbstractCephConnection implements RunnableTask<UserInfo> {
 
-    @Schema(title = "User ID", description = "Unique identifier for the new RGW user.")
+    @Schema(
+        title = "User ID",
+        description = "Unique identifier for the new RGW user."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> uid;
 
-    @Schema(title = "Display name", description = "Human-readable name for the user.")
+    @Schema(
+        title = "Display name",
+        description = "Human-readable name for the user."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> displayName;
 
-    @Schema(title = "Email", description = "Optional contact email for the user.")
+    @Schema(
+        title = "Email",
+        description = "Optional contact email for the user."
+    )
     @PluginProperty(group = "main")
     private Property<String> email;
 
@@ -88,7 +97,7 @@ public class CreateUser extends AbstractCephConnection implements RunnableTask<U
 
             return created != null
                 ? created
-                : session.get("/rgw/user/" + CephClient.pathSegment(rUid), new TypeReference<UserInfo>() {
+                : session.getWithRetry("/rgw/user/" + CephClient.pathSegment(rUid), new TypeReference<UserInfo>() {
                 });
         }
     }

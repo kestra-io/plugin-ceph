@@ -5,9 +5,11 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.ceph.AbstractCephConnection;
 import io.kestra.plugin.ceph.CephClient;
+import io.kestra.plugin.ceph.CephFetch;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
@@ -16,6 +18,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+
+import java.net.URI;
 
 @SuperBuilder
 @ToString
@@ -52,15 +56,32 @@ import lombok.experimental.SuperBuilder;
 )
 public class List extends AbstractCephConnection implements RunnableTask<List.Output> {
 
-    @Schema(title = "Pool name", description = "Pool the image belongs to.")
+    @Schema(
+        title = "Pool name",
+        description = "Pool the image belongs to."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> poolName;
 
-    @Schema(title = "Image name", description = "Name of the RBD image whose snapshots are listed.")
+    @Schema(
+        title = "Image name",
+        description = "Name of the RBD image whose snapshots are listed."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> imageName;
+
+    @Schema(
+        title = "How results are returned",
+        description = "`FETCH` (default) returns the snapshots inline under `snapshots`, `STORE` writes them to Kestra " +
+            "internal storage as Ion and returns a `uri`, `FETCH_ONE` returns only the first snapshot, `NONE` returns " +
+            "just the count. Use `STORE` on images with a large number of snapshots."
+    )
+    @NotNull
+    @Builder.Default
+    @PluginProperty(group = "main")
+    private Property<FetchType> fetchType = Property.ofValue(FetchType.FETCH);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -68,14 +89,14 @@ public class List extends AbstractCephConnection implements RunnableTask<List.Ou
         try (var session = connect(runContext)) {
             var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
             var rImageName = runContext.render(imageName).as(String.class).orElseThrow(() -> new IllegalArgumentException("imageName is required"));
+            var rFetchType = runContext.render(fetchType).as(FetchType.class).orElse(FetchType.FETCH);
 
             logger.info("Listing snapshots of RBD image '{}/{}'", rPoolName, rImageName);
             var snapshots = SnapshotSupport.fetchSnapshots(session, CephClient.imageSpec(rPoolName, rImageName));
 
-            return Output.builder()
-                .total(snapshots.size())
-                .snapshots(snapshots)
-                .build();
+            var output = Output.builder().total(snapshots.size());
+            CephFetch.apply(runContext, rFetchType, snapshots, output::snapshots, output::uri);
+            return output.build();
         }
     }
 
@@ -83,10 +104,22 @@ public class List extends AbstractCephConnection implements RunnableTask<List.Ou
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
 
-        @Schema(title = "Total", description = "Number of snapshots returned.")
+        @Schema(
+            title = "Total",
+            description = "Number of snapshots returned."
+        )
         private final Integer total;
 
-        @Schema(title = "Snapshots", description = "Summary of each snapshot on the image.")
+        @Schema(
+            title = "Snapshots",
+            description = "Summary of each snapshot on the image. Empty when `fetchType` is `STORE` or `NONE`."
+        )
         private final java.util.List<SnapshotInfo> snapshots;
+
+        @Schema(
+            title = "URI",
+            description = "Storage URI of the Ion-serialized snapshots. Set only when `fetchType` is `STORE`."
+        )
+        private final URI uri;
     }
 }
