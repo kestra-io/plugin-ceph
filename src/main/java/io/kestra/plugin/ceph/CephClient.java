@@ -39,6 +39,9 @@ public final class CephClient {
      */
     private static final String API_VERSION_HEADER = "application/vnd.ceph.api.v1.0+json";
 
+    /** Parses the version an endpoint requires from a 415 body, e.g. {@code endpoint is '2.0'}. */
+    private static final Pattern REQUIRED_VERSION_PATTERN = Pattern.compile("endpoint is '([0-9]+\\.[0-9]+)'");
+
     private CephClient() {
     }
 
@@ -209,7 +212,7 @@ public final class CephClient {
         if (body == null) {
             return null;
         }
-        var matcher = Pattern.compile("endpoint is '([0-9]+\\.[0-9]+)'").matcher(body);
+        var matcher = REQUIRED_VERSION_PATTERN.matcher(body);
         return matcher.find() ? matcher.group(1) : null;
     }
 
