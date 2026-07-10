@@ -15,6 +15,8 @@ import io.kestra.core.storages.kv.KVMetadata;
 import io.kestra.core.storages.kv.KVValueAndMetadata;
 import io.kestra.plugin.ceph.CephClient;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -93,7 +95,7 @@ public class OnClusterHealthDegraded extends AbstractTrigger implements PollingT
     @NotNull
     @Builder.Default
     @PluginProperty(group = "connection")
-    private Property<Integer> port = Property.ofValue(8443);
+    private Property<@Min(1) @Max(65535) Integer> port = Property.ofValue(8443);
 
     @Schema(
         title = "Username",

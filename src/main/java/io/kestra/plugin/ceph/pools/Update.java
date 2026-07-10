@@ -66,16 +66,12 @@ public class Update extends AbstractCephConnection implements RunnableTask<PoolI
     private Property<String> poolName;
 
     @Schema(title = "Replica size", description = "New number of data replicas. Only sent if set.")
-    @Min(1)
-    @Max(10)
     @PluginProperty(group = "main")
-    private Property<Integer> size;
+    private Property<@Min(1) @Max(10) Integer> size;
 
     @Schema(title = "Placement group count", description = "New number of placement groups. Only sent if set.")
-    @Min(1)
-    @Max(65536)
     @PluginProperty(group = "main")
-    private Property<Integer> pgNum;
+    private Property<@Min(1) @Max(65536) Integer> pgNum;
 
     @Schema(title = "Application metadata", description = "Application tags to set on the pool. Only sent if set.")
     @PluginProperty(group = "advanced")

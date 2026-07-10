@@ -71,9 +71,8 @@ public class Create extends AbstractCephConnection implements RunnableTask<RbdIm
 
     @Schema(title = "Size", description = "Image size in bytes, e.g. `10737418240` for 10 GiB.")
     @NotNull
-    @Min(1)
     @PluginProperty(group = "main")
-    private Property<Long> size;
+    private Property<@Min(1) Long> size;
 
     @Override
     public RbdImageInfo run(RunContext runContext) throws Exception {

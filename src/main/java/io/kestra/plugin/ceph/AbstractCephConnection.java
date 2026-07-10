@@ -7,6 +7,8 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -44,7 +46,7 @@ public abstract class AbstractCephConnection extends Task {
     @NotNull
     @Builder.Default
     @PluginProperty(group = "connection")
-    protected Property<Integer> port = Property.ofValue(8443);
+    protected Property<@Min(1) @Max(65535) Integer> port = Property.ofValue(8443);
 
     @Schema(
         title = "Username",

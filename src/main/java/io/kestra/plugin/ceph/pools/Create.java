@@ -79,21 +79,17 @@ public class Create extends AbstractCephConnection implements RunnableTask<PoolI
         description = "Number of placement groups for the pool. Must be a positive power of two for optimal distribution. Defaults to `32`."
     )
     @NotNull
-    @Min(1)
-    @Max(65536)
     @Builder.Default
     @PluginProperty(group = "main")
-    private Property<Integer> pgNum = Property.ofValue(32);
+    private Property<@Min(1) @Max(65536) Integer> pgNum = Property.ofValue(32);
 
     @Schema(
         title = "Replica size",
         description = "Number of data replicas for a `REPLICATED` pool. Ignored for `ERASURE` pools. Defaults to `3`."
     )
-    @Min(1)
-    @Max(10)
     @Builder.Default
     @PluginProperty(group = "main")
-    private Property<Integer> size = Property.ofValue(3);
+    private Property<@Min(1) @Max(10) Integer> size = Property.ofValue(3);
 
     @Schema(
         title = "Application metadata",
