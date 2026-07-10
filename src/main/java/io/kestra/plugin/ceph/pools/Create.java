@@ -63,12 +63,18 @@ import java.util.Map;
 )
 public class Create extends AbstractCephConnection implements RunnableTask<PoolInfo> {
 
-    @Schema(title = "Pool name", description = "Name of the pool to create.")
+    @Schema(
+        title = "Pool name",
+        description = "Name of the pool to create."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> poolName;
 
-    @Schema(title = "Pool type", description = "Replication strategy. Defaults to `REPLICATED`.")
+    @Schema(
+        title = "Pool type",
+        description = "Replication strategy. Defaults to `REPLICATED`."
+    )
     @NotNull
     @Builder.Default
     @PluginProperty(group = "main")

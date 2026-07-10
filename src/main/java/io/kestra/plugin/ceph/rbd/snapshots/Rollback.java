@@ -50,17 +50,26 @@ import lombok.experimental.SuperBuilder;
 )
 public class Rollback extends AbstractCephConnection implements RunnableTask<Rollback.Output> {
 
-    @Schema(title = "Pool name", description = "Pool the image belongs to.")
+    @Schema(
+        title = "Pool name",
+        description = "Pool the image belongs to."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> poolName;
 
-    @Schema(title = "Image name", description = "Name of the RBD image to roll back.")
+    @Schema(
+        title = "Image name",
+        description = "Name of the RBD image to roll back."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> imageName;
 
-    @Schema(title = "Snapshot name", description = "Name of the snapshot to roll back to.")
+    @Schema(
+        title = "Snapshot name",
+        description = "Name of the snapshot to roll back to."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> snapshotName;
@@ -88,7 +97,10 @@ public class Rollback extends AbstractCephConnection implements RunnableTask<Rol
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
 
-        @Schema(title = "Message", description = "Human-readable confirmation of the rollback.")
+        @Schema(
+            title = "Message",
+            description = "Human-readable confirmation of the rollback."
+        )
         private final String message;
     }
 }

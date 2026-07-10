@@ -56,17 +56,26 @@ import java.util.Map;
 )
 public class Create extends AbstractCephConnection implements RunnableTask<SnapshotInfo> {
 
-    @Schema(title = "Pool name", description = "Pool the image belongs to.")
+    @Schema(
+        title = "Pool name",
+        description = "Pool the image belongs to."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> poolName;
 
-    @Schema(title = "Image name", description = "Name of the RBD image to snapshot.")
+    @Schema(
+        title = "Image name",
+        description = "Name of the RBD image to snapshot."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> imageName;
 
-    @Schema(title = "Snapshot name", description = "Name to give the new snapshot.")
+    @Schema(
+        title = "Snapshot name",
+        description = "Name to give the new snapshot."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> snapshotName;

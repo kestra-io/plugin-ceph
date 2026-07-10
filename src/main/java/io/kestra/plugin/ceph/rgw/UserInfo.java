@@ -10,13 +10,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record UserInfo(
-    @Schema(title = "User ID", description = "Unique identifier of the RGW user.")
+    @Schema(
+        title = "User ID",
+        description = "Unique identifier of the RGW user."
+    )
     @JsonProperty("user_id") String userId,
 
-    @Schema(title = "Display name", description = "Human-readable name of the user.")
+    @Schema(
+        title = "Display name",
+        description = "Human-readable name of the user."
+    )
     @JsonProperty("display_name") String displayName,
 
-    @Schema(title = "Email", description = "Contact email of the user, if set.")
+    @Schema(
+        title = "Email",
+        description = "Contact email of the user, if set."
+    )
     String email
 ) implements io.kestra.core.models.tasks.Output {
 }

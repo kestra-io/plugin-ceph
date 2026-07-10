@@ -13,25 +13,46 @@ import java.util.List;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record PoolInfo(
-    @Schema(title = "Pool ID", description = "Numeric identifier Ceph assigned to the pool.")
+    @Schema(
+        title = "Pool ID",
+        description = "Numeric identifier Ceph assigned to the pool."
+    )
     @JsonProperty("pool") Integer poolId,
 
-    @Schema(title = "Pool name", description = "Name of the pool.")
+    @Schema(
+        title = "Pool name",
+        description = "Name of the pool."
+    )
     @JsonProperty("pool_name") String poolName,
 
-    @Schema(title = "Pool type", description = "Replication strategy: `replicated` or `erasure`.")
+    @Schema(
+        title = "Pool type",
+        description = "Replication strategy: `replicated` or `erasure`."
+    )
     @JsonProperty("type") String poolType,
 
-    @Schema(title = "Replica size", description = "Number of data replicas for a replicated pool.")
+    @Schema(
+        title = "Replica size",
+        description = "Number of data replicas for a replicated pool."
+    )
     Integer size,
 
-    @Schema(title = "Placement group count", description = "Number of placement groups.")
+    @Schema(
+        title = "Placement group count",
+        description = "Number of placement groups."
+    )
     @JsonProperty("pg_num") Integer pgNum,
 
-    @Schema(title = "Placement group placement count", description = "Number of placement groups used for placement.")
+    @Schema(
+        title = "Placement group placement count",
+        description = "Number of placement groups used for placement."
+    )
     @JsonProperty("pg_placement_num") Integer pgpNum,
 
-    @Schema(title = "Application metadata", description = "Application tags enabled on the pool, e.g. `rbd` or `rgw`.")
+    @Schema(
+        title = "Application metadata",
+        description = "Application tags enabled on the pool, e.g. `rbd` or `rgw`."
+    )
     @JsonProperty("application_metadata") List<String> applicationMetadata
 ) implements io.kestra.core.models.tasks.Output {
 }

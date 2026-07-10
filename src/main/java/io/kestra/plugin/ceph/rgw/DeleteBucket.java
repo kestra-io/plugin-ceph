@@ -48,7 +48,10 @@ import lombok.experimental.SuperBuilder;
 )
 public class DeleteBucket extends AbstractCephConnection implements RunnableTask<DeleteBucket.Output> {
 
-    @Schema(title = "Bucket name", description = "Name of the bucket to delete.")
+    @Schema(
+        title = "Bucket name",
+        description = "Name of the bucket to delete."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> bucketName;
@@ -73,10 +76,16 @@ public class DeleteBucket extends AbstractCephConnection implements RunnableTask
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
 
-        @Schema(title = "Deleted", description = "`true` if the bucket existed and was deleted, `false` if it was already absent.")
+        @Schema(
+            title = "Deleted",
+            description = "`true` if the bucket existed and was deleted, `false` if it was already absent."
+        )
         private final Boolean deleted;
 
-        @Schema(title = "Message", description = "Human-readable outcome of the deletion.")
+        @Schema(
+            title = "Message",
+            description = "Human-readable outcome of the deletion."
+        )
         private final String message;
     }
 }

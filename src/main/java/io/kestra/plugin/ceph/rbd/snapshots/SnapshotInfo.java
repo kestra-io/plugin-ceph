@@ -10,19 +10,34 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SnapshotInfo(
-    @Schema(title = "Snapshot ID", description = "Numeric identifier Ceph assigned to the snapshot.")
+    @Schema(
+        title = "Snapshot ID",
+        description = "Numeric identifier Ceph assigned to the snapshot."
+    )
     Long id,
 
-    @Schema(title = "Snapshot name", description = "Name of the snapshot.")
+    @Schema(
+        title = "Snapshot name",
+        description = "Name of the snapshot."
+    )
     String name,
 
-    @Schema(title = "Size", description = "Size of the image at the time the snapshot was taken, in bytes.")
+    @Schema(
+        title = "Size",
+        description = "Size of the image at the time the snapshot was taken, in bytes."
+    )
     Long size,
 
-    @Schema(title = "Timestamp", description = "Timestamp of when the snapshot was created, as returned by Ceph.")
+    @Schema(
+        title = "Timestamp",
+        description = "Timestamp of when the snapshot was created, as returned by Ceph."
+    )
     String timestamp,
 
-    @Schema(title = "Protected", description = "Whether the snapshot is protected from deletion.")
+    @Schema(
+        title = "Protected",
+        description = "Whether the snapshot is protected from deletion."
+    )
     @JsonProperty("is_protected") Boolean isProtected
 ) implements io.kestra.core.models.tasks.Output {
 }

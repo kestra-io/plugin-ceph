@@ -57,12 +57,18 @@ import java.util.Map;
 )
 public class CreateBucket extends AbstractCephConnection implements RunnableTask<BucketInfo> {
 
-    @Schema(title = "Bucket name", description = "Name of the bucket to create.")
+    @Schema(
+        title = "Bucket name",
+        description = "Name of the bucket to create."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> bucketName;
 
-    @Schema(title = "Owner", description = "UID of the RGW user that owns the bucket.")
+    @Schema(
+        title = "Owner",
+        description = "UID of the RGW user that owns the bucket."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> owner;

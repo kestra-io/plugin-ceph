@@ -200,13 +200,22 @@ public class OnClusterHealthDegraded extends AbstractTrigger implements PollingT
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
 
-        @Schema(title = "Cluster status", description = "The degraded status that triggered this execution: `HEALTH_WARN` or `HEALTH_ERR`.")
+        @Schema(
+            title = "Cluster status",
+            description = "The degraded status that triggered this execution: `HEALTH_WARN` or `HEALTH_ERR`."
+        )
         private final String status;
 
-        @Schema(title = "Summary", description = "Human-readable messages derived from each active health check.")
+        @Schema(
+            title = "Summary",
+            description = "Human-readable messages derived from each active health check."
+        )
         private final List<String> summary;
 
-        @Schema(title = "Checks", description = "Raw per-check details as returned by the Ceph Dashboard API; a list of check objects.")
+        @Schema(
+            title = "Checks",
+            description = "Raw per-check details as returned by the Ceph Dashboard API; a list of check objects."
+        )
         private final Object checks;
     }
 }

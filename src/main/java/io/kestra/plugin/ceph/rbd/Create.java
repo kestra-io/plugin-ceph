@@ -59,17 +59,26 @@ import java.util.Map;
 )
 public class Create extends AbstractCephConnection implements RunnableTask<RbdImageInfo> {
 
-    @Schema(title = "Pool name", description = "Pool the image is created in.")
+    @Schema(
+        title = "Pool name",
+        description = "Pool the image is created in."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> poolName;
 
-    @Schema(title = "Image name", description = "Name of the RBD image to create.")
+    @Schema(
+        title = "Image name",
+        description = "Name of the RBD image to create."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> imageName;
 
-    @Schema(title = "Size", description = "Image size in bytes, e.g. `10737418240` for 10 GiB.")
+    @Schema(
+        title = "Size",
+        description = "Image size in bytes, e.g. `10737418240` for 10 GiB."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<@Min(1) Long> size;

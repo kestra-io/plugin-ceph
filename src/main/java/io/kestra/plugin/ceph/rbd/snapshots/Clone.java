@@ -61,27 +61,42 @@ import java.util.Map;
 )
 public class Clone extends AbstractCephConnection implements RunnableTask<RbdImageInfo> {
 
-    @Schema(title = "Pool name", description = "Pool of the source image holding the snapshot.")
+    @Schema(
+        title = "Pool name",
+        description = "Pool of the source image holding the snapshot."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> poolName;
 
-    @Schema(title = "Image name", description = "Name of the source RBD image holding the snapshot.")
+    @Schema(
+        title = "Image name",
+        description = "Name of the source RBD image holding the snapshot."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> imageName;
 
-    @Schema(title = "Snapshot name", description = "Name of the snapshot to clone from.")
+    @Schema(
+        title = "Snapshot name",
+        description = "Name of the snapshot to clone from."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> snapshotName;
 
-    @Schema(title = "Destination pool name", description = "Pool the new cloned image is created in.")
+    @Schema(
+        title = "Destination pool name",
+        description = "Pool the new cloned image is created in."
+    )
     @NotNull
     @PluginProperty(group = "destination")
     private Property<String> childPoolName;
 
-    @Schema(title = "Destination image name", description = "Name of the new cloned image.")
+    @Schema(
+        title = "Destination image name",
+        description = "Name of the new cloned image."
+    )
     @NotNull
     @PluginProperty(group = "destination")
     private Property<String> childImageName;

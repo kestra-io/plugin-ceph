@@ -69,13 +69,22 @@ public class GetStatus extends AbstractCephConnection implements RunnableTask<Ge
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
 
-        @Schema(title = "Cluster status", description = "Overall Ceph cluster status: `HEALTH_OK`, `HEALTH_WARN`, or `HEALTH_ERR`.")
+        @Schema(
+            title = "Cluster status",
+            description = "Overall Ceph cluster status: `HEALTH_OK`, `HEALTH_WARN`, or `HEALTH_ERR`."
+        )
         private final String status;
 
-        @Schema(title = "Summary", description = "Human-readable messages derived from each active health check.")
+        @Schema(
+            title = "Summary",
+            description = "Human-readable messages derived from each active health check."
+        )
         private final List<String> summary;
 
-        @Schema(title = "Checks", description = "Raw per-check details as returned by the Ceph Dashboard API; a list of check objects.")
+        @Schema(
+            title = "Checks",
+            description = "Raw per-check details as returned by the Ceph Dashboard API; a list of check objects."
+        )
         private final Object checks;
     }
 }

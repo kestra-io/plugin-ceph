@@ -50,17 +50,26 @@ import lombok.experimental.SuperBuilder;
 )
 public class Delete extends AbstractCephConnection implements RunnableTask<Delete.Output> {
 
-    @Schema(title = "Pool name", description = "Pool the image belongs to.")
+    @Schema(
+        title = "Pool name",
+        description = "Pool the image belongs to."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> poolName;
 
-    @Schema(title = "Image name", description = "Name of the RBD image the snapshot belongs to.")
+    @Schema(
+        title = "Image name",
+        description = "Name of the RBD image the snapshot belongs to."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> imageName;
 
-    @Schema(title = "Snapshot name", description = "Name of the snapshot to delete.")
+    @Schema(
+        title = "Snapshot name",
+        description = "Name of the snapshot to delete."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> snapshotName;
@@ -91,10 +100,16 @@ public class Delete extends AbstractCephConnection implements RunnableTask<Delet
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
 
-        @Schema(title = "Deleted", description = "`true` if the snapshot existed and was deleted, `false` if it was already absent.")
+        @Schema(
+            title = "Deleted",
+            description = "`true` if the snapshot existed and was deleted, `false` if it was already absent."
+        )
         private final Boolean deleted;
 
-        @Schema(title = "Message", description = "Human-readable outcome of the deletion.")
+        @Schema(
+            title = "Message",
+            description = "Human-readable outcome of the deletion."
+        )
         private final String message;
     }
 }

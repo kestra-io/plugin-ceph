@@ -48,7 +48,10 @@ import lombok.experimental.SuperBuilder;
 )
 public class Get extends AbstractCephConnection implements RunnableTask<PoolInfo> {
 
-    @Schema(title = "Pool name", description = "Name of the Ceph pool to fetch.")
+    @Schema(
+        title = "Pool name",
+        description = "Name of the Ceph pool to fetch."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> poolName;
