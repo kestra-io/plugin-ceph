@@ -5,12 +5,12 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.VoidOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.ceph.AbstractCephConnection;
 import io.kestra.plugin.ceph.CephClient;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,7 +46,7 @@ import lombok.experimental.SuperBuilder;
         )
     }
 )
-public class DeleteBucket extends AbstractCephConnection implements RunnableTask<DeleteBucket.Output> {
+public class DeleteBucket extends AbstractCephConnection implements RunnableTask<VoidOutput> {
 
     @Schema(
         title = "Bucket name",
@@ -57,35 +57,15 @@ public class DeleteBucket extends AbstractCephConnection implements RunnableTask
     private Property<String> bucketName;
 
     @Override
-    public Output run(RunContext runContext) throws Exception {
+    public VoidOutput run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
         try (var session = connect(runContext)) {
             var rBucketName = runContext.render(bucketName).as(String.class).orElseThrow(() -> new IllegalArgumentException("bucketName is required"));
 
             logger.info("Deleting RGW bucket '{}'", rBucketName);
-            var deleted = session.delete("/rgw/bucket/" + CephClient.pathSegment(rBucketName));
+            session.delete("/rgw/bucket/" + CephClient.pathSegment(rBucketName));
 
-            return Output.builder()
-                .deleted(deleted)
-                .message(deleted ? "Bucket '" + rBucketName + "' deleted." : "Bucket '" + rBucketName + "' did not exist.")
-                .build();
+            return null;
         }
-    }
-
-    @Builder
-    @Getter
-    public static class Output implements io.kestra.core.models.tasks.Output {
-
-        @Schema(
-            title = "Deleted",
-            description = "`true` if the bucket existed and was deleted, `false` if it was already absent."
-        )
-        private final Boolean deleted;
-
-        @Schema(
-            title = "Message",
-            description = "Human-readable outcome of the deletion."
-        )
-        private final String message;
     }
 }

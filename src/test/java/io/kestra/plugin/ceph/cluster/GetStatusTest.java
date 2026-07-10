@@ -47,8 +47,8 @@ class GetStatusTest {
 
         var output = task.run(runContextFactory.of());
 
-        assertThat(output.status(), is("HEALTH_OK"));
-        assertThat(output.summary(), empty());
+        assertThat(output.getStatus(), is("HEALTH_OK"));
+        assertThat(output.getSummary(), empty());
     }
 
     @Test
@@ -84,8 +84,8 @@ class GetStatusTest {
 
         var output = task.run(runContextFactory.of());
 
-        assertThat(output.status(), is("HEALTH_WARN"));
-        assertThat(output.summary(), contains(
+        assertThat(output.getStatus(), is("HEALTH_WARN"));
+        assertThat(output.getSummary(), contains(
             "AUTH_INSECURE_GLOBAL_ID_RECLAIM_ALLOWED: mon is allowing insecure global_id reclaim",
             "MON_MSGR2_NOT_ENABLED: 1 monitors have not enabled msgr2"
         ));

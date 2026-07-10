@@ -5,12 +5,12 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.VoidOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.ceph.AbstractCephConnection;
 import io.kestra.plugin.ceph.CephClient;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,7 +46,7 @@ import lombok.experimental.SuperBuilder;
         )
     }
 )
-public class Delete extends AbstractCephConnection implements RunnableTask<Delete.Output> {
+public class Delete extends AbstractCephConnection implements RunnableTask<VoidOutput> {
 
     @Schema(
         title = "Pool name",
@@ -57,35 +57,15 @@ public class Delete extends AbstractCephConnection implements RunnableTask<Delet
     private Property<String> poolName;
 
     @Override
-    public Output run(RunContext runContext) throws Exception {
+    public VoidOutput run(RunContext runContext) throws Exception {
         var logger = runContext.logger();
         try (var session = connect(runContext)) {
             var rPoolName = runContext.render(poolName).as(String.class).orElseThrow(() -> new IllegalArgumentException("poolName is required"));
 
             logger.info("Deleting Ceph pool '{}'", rPoolName);
-            var deleted = session.delete("/pool/" + CephClient.pathSegment(rPoolName));
+            session.delete("/pool/" + CephClient.pathSegment(rPoolName));
 
-            return Output.builder()
-                .deleted(deleted)
-                .message(deleted ? "Pool '" + rPoolName + "' deleted." : "Pool '" + rPoolName + "' did not exist.")
-                .build();
+            return null;
         }
-    }
-
-    @Builder
-    @Getter
-    public static class Output implements io.kestra.core.models.tasks.Output {
-
-        @Schema(
-            title = "Deleted",
-            description = "`true` if the pool existed and was deleted, `false` if it was already absent."
-        )
-        private final Boolean deleted;
-
-        @Schema(
-            title = "Message",
-            description = "Human-readable outcome of the deletion."
-        )
-        private final String message;
     }
 }

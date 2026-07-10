@@ -12,10 +12,10 @@ import org.junit.jupiter.api.Test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
+import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.noContent;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 @KestraTest
 class DeleteTest {
@@ -45,13 +45,13 @@ class DeleteTest {
             .snapshotName(Property.ofValue("before-migration"))
             .build();
 
-        var output = task.run(runContextFactory.of());
+        task.run(runContextFactory.of());
 
-        assertThat(output.getDeleted(), is(true));
+        wireMock.verify(deleteRequestedFor(urlEqualTo("/api/block/image/rbd%2Fdata-volume/snap/before-migration")));
     }
 
     @Test
-    void notFound_treatedAsAlreadyDeleted() throws Exception {
+    void notFound_treatedAsAlreadyDeleted() {
         wireMock.stubFor(delete(urlEqualTo("/api/block/image/rbd%2Fdata-volume/snap/missing")).willReturn(aResponse().withStatus(404)));
 
         var task = CephWireMock.withConnection(Delete.builder().id("deleteSnapMissing" + System.nanoTime()).type(Delete.class.getName()), wireMock.httpsPort())
@@ -60,8 +60,7 @@ class DeleteTest {
             .snapshotName(Property.ofValue("missing"))
             .build();
 
-        var output = task.run(runContextFactory.of());
-
-        assertThat(output.getDeleted(), is(false));
+        assertDoesNotThrow(() -> task.run(runContextFactory.of()));
+        wireMock.verify(deleteRequestedFor(urlEqualTo("/api/block/image/rbd%2Fdata-volume/snap/missing")));
     }
 }

@@ -80,11 +80,10 @@ class PoolsIT {
             );
             assertThat(list.getPools().stream().anyMatch(p -> poolName.equals(p.poolName())), is(true));
         } finally {
-            var deleted = CephIT.withConnection(Delete.builder().id("poolsItDelete" + System.nanoTime()).type(Delete.class.getName()))
+            CephIT.withConnection(Delete.builder().id("poolsItDelete" + System.nanoTime()).type(Delete.class.getName()))
                 .poolName(Property.ofValue(poolName))
                 .build()
                 .run(runContext);
-            assertThat(deleted.getDeleted(), is(true));
         }
     }
 }

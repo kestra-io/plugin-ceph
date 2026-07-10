@@ -67,10 +67,10 @@ class GetHealthTest {
 
         var output = task.run(runContextFactory.of());
 
-        assertThat(output.status(), is("HEALTH_WARN"));
-        assertThat(output.summary(), hasSize(1));
-        assertThat(output.summary(), contains("MON_DISK_LOW: mon a is low on available space"));
-        assertThat(output.checks(), instanceOf(java.util.List.class));
+        assertThat(output.getStatus(), is("HEALTH_WARN"));
+        assertThat(output.getSummary(), hasSize(1));
+        assertThat(output.getSummary(), contains("MON_DISK_LOW: mon a is low on available space"));
+        assertThat(output.getChecks(), instanceOf(java.util.List.class));
     }
 
     @Test
@@ -100,7 +100,7 @@ class GetHealthTest {
 
         var output = task.run(runContextFactory.of());
 
-        assertThat(output.status(), is("HEALTH_OK"));
+        assertThat(output.getStatus(), is("HEALTH_OK"));
         CephWireMock.verifyAuthHeader(wireMock, "/api/health/full", token);
         CephWireMock.verifyNoAuthCall(wireMock);
     }

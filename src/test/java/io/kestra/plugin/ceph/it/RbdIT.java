@@ -131,7 +131,7 @@ class RbdIT {
                     .run(runContext);
             }
 
-            var snapshotDeleted = CephIT.withConnection(
+            CephIT.withConnection(
                     io.kestra.plugin.ceph.rbd.snapshots.Delete.builder()
                         .id("rbdItSnapDelete" + System.nanoTime())
                         .type(io.kestra.plugin.ceph.rbd.snapshots.Delete.class.getName())
@@ -141,14 +141,12 @@ class RbdIT {
                 .snapshotName(Property.ofValue(snapshotName))
                 .build()
                 .run(runContext);
-            assertThat(snapshotDeleted.getDeleted(), is(true));
 
-            var imageDeleted = CephIT.withConnection(Delete.builder().id("rbdItImageDelete" + System.nanoTime()).type(Delete.class.getName()))
+            CephIT.withConnection(Delete.builder().id("rbdItImageDelete" + System.nanoTime()).type(Delete.class.getName()))
                 .poolName(Property.ofValue(poolName))
                 .imageName(Property.ofValue(imageName))
                 .build()
                 .run(runContext);
-            assertThat(imageDeleted.getDeleted(), is(true));
         } finally {
             CephIT.withConnection(
                     io.kestra.plugin.ceph.pools.Delete.builder()

@@ -10,11 +10,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
+import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.noContent;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 @KestraTest
 class DeleteTest {
@@ -43,8 +44,21 @@ class DeleteTest {
             .imageName(Property.ofValue("data-volume"))
             .build();
 
-        var output = task.run(runContextFactory.of());
+        task.run(runContextFactory.of());
 
-        assertThat(output.getDeleted(), is(true));
+        wireMock.verify(deleteRequestedFor(urlEqualTo("/api/block/image/rbd%2Fdata-volume")));
+    }
+
+    @Test
+    void notFound_treatedAsAlreadyDeleted() {
+        wireMock.stubFor(delete(urlEqualTo("/api/block/image/rbd%2Fmissing")).willReturn(aResponse().withStatus(404)));
+
+        var task = CephWireMock.withConnection(Delete.builder().id("deleteRbdMissing" + System.nanoTime()).type(Delete.class.getName()), wireMock.httpsPort())
+            .poolName(Property.ofValue("rbd"))
+            .imageName(Property.ofValue("missing"))
+            .build();
+
+        assertDoesNotThrow(() -> task.run(runContextFactory.of()));
+        wireMock.verify(deleteRequestedFor(urlEqualTo("/api/block/image/rbd%2Fmissing")));
     }
 }

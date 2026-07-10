@@ -71,11 +71,10 @@ class RgwIT {
             );
             assertThat(buckets.getBuckets(), hasItem(bucketName));
         } finally {
-            var deleted = CephIT.withConnection(DeleteBucket.builder().id("rgwItDeleteBucket" + System.nanoTime()).type(DeleteBucket.class.getName()))
+            CephIT.withConnection(DeleteBucket.builder().id("rgwItDeleteBucket" + System.nanoTime()).type(DeleteBucket.class.getName()))
                 .bucketName(Property.ofValue(bucketName))
                 .build()
                 .run(runContext);
-            assertThat(deleted.getDeleted(), is(true));
         }
     }
 }
