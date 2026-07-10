@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Starts a single-node Ceph cluster for the integration tests and points the tests at it.
-# Runs on the amd64 CI runner; the cluster itself is built by ceph-bootstrap.sh.
+# Starts the Ceph cluster (via ceph-bootstrap.sh) and points the integration tests at it. amd64 CI.
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

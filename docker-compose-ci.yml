@@ -1,7 +1,5 @@
-# Single-node Ceph for CI integration tests. The base ceph image is used (not ceph/demo, whose
-# dashboard has a broken cherrypy dependency); .github/ceph-bootstrap.sh brings the cluster up.
-# privileged is required for the loop-backed OSD; the ext4 volume avoids overlayfs O_DIRECT issues.
-# amd64 only (the arm64 ceph-osd binary crashes), which is why the integration suite is CI-gated.
+# Single-node Ceph for CI integration tests, built by .github/ceph-bootstrap.sh on the base ceph
+# image (ceph/demo ships a broken dashboard). amd64 only: the arm64 ceph-osd binary crashes.
 services:
   ceph:
     image: quay.io/ceph/ceph:v18

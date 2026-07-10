@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Bring up a single-node Ceph cluster (mon + mgr + one BlueStore OSD + dashboard + RGW) inside the
-# quay.io/ceph/ceph base image. CI only, amd64. The base image is used instead of quay.io/ceph/demo
-# because the demo image ships a dashboard with a broken cherrypy dependency.
+# Single-node Ceph (mon, mgr, OSD, dashboard, RGW) in the ceph base image. CI only, amd64.
 set -euo pipefail
 
 HOST="$(hostname -s)"
@@ -83,9 +81,7 @@ start_osd() {
     sleep 5
 }
 
-# RGW daemon plus a system user whose keys the dashboard uses for bucket/user admin ops (bucket
-# delete needs write caps the auto-provisioned dashboard user does not have). radosgw auto-creates
-# its pools on first start.
+# RGW daemon plus a system user whose keys the dashboard uses for bucket/user admin ops.
 start_rgw() {
     mkdir -p "/var/lib/ceph/radosgw/ceph-rgw.$RGW_NAME"
     ceph auth get-or-create "client.rgw.$RGW_NAME" mon 'allow rw' osd 'allow rwx' mgr 'allow rw' \
