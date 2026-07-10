@@ -62,7 +62,7 @@ import java.util.Optional;
 
                 triggers:
                   - id: cluster_degraded
-                    type: io.kestra.plugin.ceph.cluster.OnClusterHealthDegraded
+                    type: io.kestra.plugin.ceph.cluster.HealthTrigger
                     host: "ceph-mgr.internal"
                     username: "admin"
                     password: "{{ secret('CEPH_DASHBOARD_PASSWORD') }}"
@@ -76,7 +76,7 @@ import java.util.Optional;
         )
     }
 )
-public class OnClusterHealthDegraded extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<OnClusterHealthDegraded.Output> {
+public class HealthTrigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<HealthTrigger.Output> {
 
     private static final String STATE_KEY_PREFIX = "ceph-cluster-health-";
 

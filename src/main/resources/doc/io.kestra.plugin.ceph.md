@@ -45,4 +45,4 @@ Some Ceph versions process pool creation and updates asynchronously via the Dash
 
 ## Triggers
 
-`cluster.OnClusterHealthDegraded` polls `GET /api/health/minimal` on the configured `interval` (default `PT5M`) and fires exactly once when the cluster status transitions from `HEALTH_OK` (or unknown) into `HEALTH_WARN` or `HEALTH_ERR`. It does not fire again on subsequent polls while the cluster stays degraded, and re-arms once the cluster recovers to `HEALTH_OK`. Outputs: `status`, `summary`, and `checks`, same shape as the health tasks.
+`cluster.HealthTrigger` polls `GET /api/health/minimal` on the configured `interval` (default `PT5M`) and fires exactly once when the cluster status transitions from `HEALTH_OK` (or unknown) into `HEALTH_WARN` or `HEALTH_ERR`. It does not fire again on subsequent polls while the cluster stays degraded, and re-arms once the cluster recovers to `HEALTH_OK`. Outputs: `status`, `summary`, and `checks`, same shape as the health tasks.

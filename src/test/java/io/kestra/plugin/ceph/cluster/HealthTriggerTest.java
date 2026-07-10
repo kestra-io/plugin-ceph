@@ -21,7 +21,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-class OnClusterHealthDegradedTest {
+class HealthTriggerTest {
 
     @Inject
     RunContextFactory runContextFactory;
@@ -42,10 +42,10 @@ class OnClusterHealthDegradedTest {
 
     // The trigger id is randomized per test so the namespace-KV state key (which includes it)
     // never collides with a previous test run's leftover local storage.
-    private OnClusterHealthDegraded defaultTrigger() {
-        return OnClusterHealthDegraded.builder()
+    private HealthTrigger defaultTrigger() {
+        return HealthTrigger.builder()
             .id("clusterDegraded" + System.nanoTime())
-            .type(OnClusterHealthDegraded.class.getName())
+            .type(HealthTrigger.class.getName())
             .host(Property.ofValue("localhost"))
             .port(Property.ofValue(wireMock.httpsPort()))
             .username(Property.ofValue("admin"))

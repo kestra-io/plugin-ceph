@@ -3,7 +3,7 @@
 ## What
 
 - Provides plugin components under `io.kestra.plugin.ceph`, talking to the Ceph Manager Dashboard REST API (`https://{host}:{port}/api/`).
-- `cluster`: `GetHealth`, `GetStatus`, and the `OnClusterHealthDegraded` polling trigger.
+- `cluster`: `GetHealth`, `GetStatus`, and the `HealthTrigger` polling trigger.
 - `pools`: `List`, `Get`, `Create`, `Update`, `Delete`.
 - `rbd`: `List`, `Create`, `Delete`.
 - `rbd.snapshots`: `Create`, `List`, `Delete`, `Rollback`, `Clone`.
@@ -35,7 +35,7 @@ Authentication: every task/trigger renders `host`/`port`/`username`/`password`/`
 - `io.kestra.plugin.ceph.AbstractCephConnection`
 - `io.kestra.plugin.ceph.CephClient`
 - `io.kestra.plugin.ceph.CephSession`
-- `io.kestra.plugin.ceph.cluster.OnClusterHealthDegraded`
+- `io.kestra.plugin.ceph.cluster.HealthTrigger`
 
 ### Project Structure
 
