@@ -1,0 +1,26 @@
+# Single-node Ceph for CI integration tests, built by .github/ceph-bootstrap.sh on the base ceph
+# image (ceph/demo ships a broken dashboard). amd64 only: the arm64 ceph-osd binary crashes.
+services:
+  ceph:
+    image: quay.io/ceph/ceph:v18
+    container_name: ceph
+    privileged: true
+    command: sleep infinity
+    volumes:
+      - ceph-var:/var/lib/ceph
+    networks:
+      ceph_net:
+        ipv4_address: 172.30.0.10
+    ports:
+      - "8443:8443"   # Ceph Dashboard REST API
+      - "8080:8080"   # RadosGW S3 endpoint
+
+networks:
+  ceph_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  ceph-var:

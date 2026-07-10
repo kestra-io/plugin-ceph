@@ -39,14 +39,19 @@
 
 ## Why
 
-- What user problem does this solve? Teams need a concrete starting point for building and validating new Kestra plugins without recreating the same project scaffolding from scratch.
-- Why would a team adopt this plugin in a workflow? It gives plugin authors a ready-made reference repo they can adapt alongside their own build, test, and publishing workflow.
-- What operational/business outcome does it enable? It shortens plugin delivery time, reduces setup mistakes, and makes internal or partner plugin development more repeatable.
+- What user problem does this solve? Teams running Ceph need to manage cluster health, pools, RBD images, and the Object Gateway as part of their Kestra orchestration flows, instead of scripting the Dashboard API by hand.
+- Why would a team adopt this plugin in a workflow? It gives storage and platform teams a declarative way to provision pools and RBD images, snapshot and roll back volumes, manage RGW buckets and users, and alert on degraded cluster health.
+- What operational/business outcome does it enable? It reduces manual `ceph` CLI/Dashboard operations, makes storage provisioning repeatable and auditable as code, and lets teams react to cluster health issues automatically.
 
 ## What
 
-- Provides plugin components under `io.kestra.plugin.ceph`.
-- Includes classes such as `Example`, `Trigger`.
+- Provides plugin components under `io.kestra.plugin.ceph`, talking to the Ceph Manager Dashboard REST API.
+- Authenticates with a `username`/`password` pair, or a pre-obtained JWT `token` for one-off tasks (Ceph's default 8h TTL is not auto-renewed, so use `username`/`password` in triggers or scheduled flows).
+- `cluster`: `GetHealth`, `GetStatus`, and the `HealthTrigger` trigger.
+- `pools`: `List`, `Get`, `Create`, `Update`, `Delete`.
+- `rbd.images`: `List`, `Create`, `Delete`.
+- `rbd.snapshots`: `Create`, `List`, `Delete`, `Rollback`, `Clone`.
+- `rgw`: `ListBuckets`, `CreateBucket`, `DeleteBucket`, `ListUsers`, `CreateUser`.
 
 ## Documentation
 * Full documentation can be found under: [kestra.io/docs](https://kestra.io/docs)

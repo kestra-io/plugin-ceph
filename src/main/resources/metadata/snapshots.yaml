@@ -1,0 +1,8 @@
+group: io.kestra.plugin.ceph.rbd.snapshots
+name: "snapshots"
+title: "Ceph RBD Snapshots"
+description: "Tasks that manage RBD image snapshots."
+body: "Create, list, delete, roll back, and clone snapshots of RBD block images."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
