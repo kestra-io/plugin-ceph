@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 @KestraTest
 class ListTest {
@@ -51,8 +52,10 @@ class ListTest {
             .willReturn(okJson("""
                 [
                   {"pool_name": "rbd", "value": [
-                    {"name": "data-volume", "size": 10737418240, "obj_size": 4194304},
-                    {"name": "logs-volume", "size": 5368709120, "obj_size": 4194304}
+                    {"id": "img-1", "name": "data-volume", "size": 10737418240, "obj_size": 4194304,
+                     "snapshots": [{"id": 1, "name": "before-migration", "size": 1024}]},
+                    {"id": "img-2", "name": "logs-volume", "size": 5368709120, "obj_size": 4194304,
+                     "snapshots": []}
                   ]}
                 ]
                 """)));
@@ -67,6 +70,9 @@ class ListTest {
         assertThat(output.getImages(), hasSize(2));
         assertThat(output.getImages().getFirst().poolName(), is("rbd"));
         assertThat(output.getImages().getFirst().name(), is("data-volume"));
+        assertThat(output.getImages().getFirst().id(), is("img-1"));
+        assertThat(output.getImages().getFirst().snapshots().getFirst().name(), is("before-migration"));
+        assertThat(output.getImages().get(1).snapshots(), is(empty()));
     }
 
     @Test
@@ -94,7 +100,8 @@ class ListTest {
             .willReturn(okJson("""
                 [
                   {"pool_name": "rbd", "value": [
-                    {"name": "data-volume", "size": 10737418240, "obj_size": 4194304},
+                    {"id": "img-1", "name": "data-volume", "size": 10737418240, "obj_size": 4194304,
+                     "snapshots": [{"id": 1, "name": "before-migration", "size": 1024}]},
                     {"name": "logs-volume", "size": 5368709120, "obj_size": 4194304}
                   ]}
                 ]
@@ -119,5 +126,19 @@ class ListTest {
             .block();
         assertThat(stored, hasSize(2));
         assertThat(stored.getFirst().name(), is("data-volume"));
+        assertThat(stored.getFirst().id(), is("img-1"));
+        assertThat(stored.getFirst().snapshots().getFirst().name(), is("before-migration"));
+    }
+
+    @Test
+    void legacyResponse_keepsOptionalFieldsNull() throws Exception {
+        wireMock.stubFor(get(urlEqualTo("/api/block/image"))
+            .willReturn(okJson("[{\"pool_name\":\"rbd\",\"value\":[{\"name\":\"legacy\"}]}]")));
+
+        var task = CephWireMock.withConnection(List.builder().id("listRbdLegacy" + System.nanoTime()).type(List.class.getName()), wireMock.httpsPort()).build();
+        var output = task.run(runContextFactory.of());
+
+        assertThat(output.getImages().getFirst().id(), is(nullValue()));
+        assertThat(output.getImages().getFirst().snapshots(), is(nullValue()));
     }
 }
