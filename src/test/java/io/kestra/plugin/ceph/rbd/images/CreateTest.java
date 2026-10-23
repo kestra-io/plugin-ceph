@@ -18,6 +18,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
@@ -43,7 +44,7 @@ class CreateTest {
         wireMock.stubFor(post(urlEqualTo("/api/block/image")).willReturn(noContent()));
         wireMock.stubFor(get(urlEqualTo("/api/block/image/rbd%2Fdata-volume"))
             .willReturn(okJson("""
-                {"name": "data-volume", "pool_name": "rbd", "size": 10737418240, "obj_size": 4194304}
+                {"id": "img-1", "name": "data-volume", "pool_name": "rbd", "size": 10737418240, "obj_size": 4194304, "snapshots": []}
                 """)));
 
         var task = CephWireMock.withConnection(Create.builder().id("createRbd" + System.nanoTime()).type(Create.class.getName()), wireMock.httpsPort())
@@ -54,9 +55,11 @@ class CreateTest {
 
         var output = task.run(runContextFactory.of());
 
+        assertThat(output.id(), is("img-1"));
         assertThat(output.name(), is("data-volume"));
         assertThat(output.poolName(), is("rbd"));
         assertThat(output.size(), is(10737418240L));
+        assertThat(output.snapshots(), is(empty()));
 
         wireMock.verify(postRequestedFor(urlEqualTo("/api/block/image"))
             .withRequestBody(equalToJson("""
