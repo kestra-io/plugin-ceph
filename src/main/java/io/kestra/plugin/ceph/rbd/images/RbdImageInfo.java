@@ -45,14 +45,10 @@ public record RbdImageInfo(
 
     @Schema(
         title = "Snapshots",
-        description = "Snapshots reported by the Dashboard API for the image."
+        description = "Snapshots reported by the Dashboard API for the image. Empty when the image has no snapshots; absent when the Dashboard API does not report them."
     )
     List<SnapshotInfo> snapshots
 ) implements io.kestra.core.models.tasks.Output {
-
-    public RbdImageInfo(String name, String poolName, Long size, Long objectSize) {
-        this(null, name, poolName, size, objectSize, null);
-    }
 
     /** Returns a copy with {@code poolName} filled in when the image object itself omits it. */
     public RbdImageInfo withPoolName(String fallbackPoolName) {
